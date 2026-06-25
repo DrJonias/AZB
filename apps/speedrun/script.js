@@ -1,73 +1,93 @@
-﻿const canvas = document.getElementById('canvas');
+const canvas = document.getElementById('canvas');
 const ctx    = canvas.getContext('2d');
 canvas.width  = 800;
 canvas.height = 450;
 
-const HALF_W = 22;
-const N_PTS  = 1600;
+// ── Difficulty ────────────────────────────────────────────────
+const DIFFICULTIES = {
+  easy:   { cols: 3, rows: 3, halfW: 24 },
+  medium: { cols: 5, rows: 5, halfW: 18 },
+  hard:   { cols: 7, rows: 7, halfW: 13 },
+  expert: { cols: 9, rows: 9, halfW: 10 },
+};
 
-// ── 5×5 grid definition ────────────────────────────────────────
-const GCOLS = 5, GROWS = 5;
-const GX = [140, 270, 400, 530, 660];   // column x-centers
-const GY = [60,  143, 225, 308, 390];   // row    y-centers
+let GCOLS, GROWS, GX, GY, HALF_W, N_PTS;
+let currentDiff = 'medium';
 
-// ── Hamiltonian path via randomised DFS ───────────────────────
-// Visits every tile exactly once; starts at column 0, ends at column 4.
-// Self-intersections are impossible by construction.
-function generateGridPath() {
+function applyDifficulty(name) {
+  currentDiff = name;
+  const d = DIFFICULTIES[name];
+  GCOLS  = d.cols;
+  GROWS  = d.rows;
+  HALF_W = d.halfW;
+  GX = Array.from({length: GCOLS}, (_, i) => 140 + i * (520 / (GCOLS - 1)));
+  GY = Array.from({length: GROWS}, (_, i) =>  60 + i * (330 / (GROWS - 1)));
+  N_PTS  = (GCOLS * GROWS + 2) * 55;
+
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.diff === name);
+  });
+}
+
+// ── Hamiltonian path via Warnsdorff's heuristic ───────────────
+function warnsdorffMoves(c, r, vis) {
+  return [[1,0],[-1,0],[0,1],[0,-1]].reduce((n, [dc, dr]) => {
+    const nc = c+dc, nr = r+dr;
+    return n + (nc>=0 && nc<GCOLS && nr>=0 && nr<GROWS && !vis[nr][nc] ? 1 : 0);
+  }, 0);
+}
+
+function tryPath(startRow) {
   const vis = Array.from({length: GROWS}, () => new Uint8Array(GCOLS));
-  let result = null;
-  let steps  = 0;
-  const sr   = Math.floor(Math.random() * GROWS);
+  let c = 0, r = startRow;
+  const path = [[c, r]];
+  vis[r][c] = 1;
 
-  function dfs(c, r, path) {
-    if (result || steps > 150000) return;
-    steps++;
+  while (path.length < GCOLS * GROWS) {
+    const nbrs = [[1,0],[-1,0],[0,1],[0,-1]]
+      .map(([dc, dr]) => [c+dc, r+dr])
+      .filter(([nc, nr]) => nc>=0 && nc<GCOLS && nr>=0 && nr<GROWS && !vis[nr][nc]);
 
-    if (path.length === GCOLS * GROWS) {
-      if (c === GCOLS - 1) result = path.slice(); // accept only if ending at col 4
-      return;
-    }
+    if (nbrs.length === 0) return null;
 
-    // Fisher-Yates shuffle of neighbour directions
-    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
-    for (let i = 3; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [dirs[i], dirs[j]] = [dirs[j], dirs[i]];
-    }
+    // Warnsdorff: prefer cells with fewer onward moves; tiny random tiebreak for variety
+    nbrs.sort((a, b) =>
+      (warnsdorffMoves(a[0], a[1], vis) + Math.random()*0.9) -
+      (warnsdorffMoves(b[0], b[1], vis) + Math.random()*0.9)
+    );
 
-    for (const [dc, dr] of dirs) {
-      const nc = c + dc, nr = r + dr;
-      if (nc < 0 || nc >= GCOLS || nr < 0 || nr >= GROWS || vis[nr][nc]) continue;
-      vis[nr][nc] = 1;
-      path.push([nc, nr]);
-      dfs(nc, nr, path);
-      if (result) return;
-      vis[nr][nc] = 0;
-      path.pop();
-    }
+    [c, r] = nbrs[0];
+    vis[r][c] = 1;
+    path.push([c, r]);
   }
 
-  vis[sr][0] = 1;
-  dfs(0, sr, [[0, sr]]);
+  return c === GCOLS - 1 ? path : null;
+}
 
-  // Column-snake fallback (guaranteed to end at col 4)
+function generateGridPath() {
+  let result = null;
+
+  for (let attempt = 0; attempt < 300 && !result; attempt++) {
+    result = tryPath(Math.floor(Math.random() * GROWS));
+  }
+
+  // guaranteed fallback
   if (!result) {
     result = [];
-    for (let c = 0; c < GCOLS; c++) {
-      if (c % 2 === 0) for (let r = 0; r < GROWS; r++) result.push([c, r]);
-      else             for (let r = GROWS - 1; r >= 0; r--) result.push([c, r]);
+    for (let col = 0; col < GCOLS; col++) {
+      if (col % 2 === 0) for (let row = 0; row < GROWS; row++) result.push([col, row]);
+      else               for (let row = GROWS-1; row >= 0; row--) result.push([col, row]);
     }
   }
 
   return [
-    [40,  GY[result[0][1]]],                          // entry from left edge
-    ...result.map(([c, r]) => [GX[c], GY[r]]),        // 25 tile centres
-    [760, GY[result[result.length - 1][1]]],           // exit to right edge
+    [40,  GY[result[0][1]]],
+    ...result.map(([c, r]) => [GX[c], GY[r]]),
+    [760, GY[result[result.length - 1][1]]],
   ];
 }
 
-// ── Catmull-Rom spline ───────────────────────────────────────
+// ── Catmull-Rom spline ────────────────────────────────────────
 function cr(p0, p1, p2, p3, t) {
   const [x0,y0]=p0,[x1,y1]=p1,[x2,y2]=p2,[x3,y3]=p3, t2=t*t, t3=t2*t;
   return [
@@ -94,7 +114,7 @@ function buildNormals(pts) {
   });
 }
 
-// ── Mutable track ─────────────────────────────────────────────
+// ── Track ─────────────────────────────────────────────────────
 let PATH, NORM, LEFT, RIGHT;
 
 function buildTrack() {
@@ -105,18 +125,18 @@ function buildTrack() {
   RIGHT = PATH.map(([x,y],i) => [x-NORM[i][0]*HALF_W, y-NORM[i][1]*HALF_W]);
 }
 
-buildTrack();
-
-// ── Game state ───────────────────────────────────────────────
+// ── Game state ────────────────────────────────────────────────
 let state='idle', mx=-999, my=-999;
 let t0=0, elapsed=0, best=null;
 let progressIdx=0, flashTimer=0;
 
 // ── Helpers ───────────────────────────────────────────────────
 function nearest(px, py) {
+  const sps = Math.floor(N_PTS / (GCOLS * GROWS + 2));
+  const lookahead = sps * 6;
   let bestD=Infinity, bestI=0;
-  const lo=Math.max(0, progressIdx-60);
-  const hi=Math.min(PATH.length-1, progressIdx+280);
+  const lo=Math.max(0, progressIdx - sps);
+  const hi=Math.min(PATH.length-1, progressIdx + lookahead);
   for (let i=lo;i<=hi;i++) {
     const dx=PATH[i][0]-px, dy=PATH[i][1]-py, d=dx*dx+dy*dy;
     if (d<bestD){bestD=d;bestI=i;}
@@ -131,7 +151,7 @@ function inZone(px, py, idx) {
 
 function fmt(ms) { return (ms/1000).toFixed(3)+' s'; }
 
-// ── DOM ─────────────────────────────────────────────────────
+// ── DOM ──────────────────────────────────────────────────────
 const timerEl      = document.getElementById('timer');
 const bestEl       = document.getElementById('best-display');
 const overlayStart = document.getElementById('overlay-start');
@@ -142,16 +162,29 @@ const winTimeEl    = document.getElementById('win-time-info');
 const winRecEl     = document.getElementById('win-record-info');
 
 document.getElementById('btn-start').addEventListener('click', () => {
+  buildTrack();
   overlayStart.classList.add('hidden');
 });
+
 document.getElementById('btn-retry').addEventListener('click', reset);
 document.getElementById('btn-again').addEventListener('click', reset);
+
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.diff === currentDiff) return;
+    applyDifficulty(btn.dataset.diff);
+    best = null;
+    bestEl.textContent = '';
+    buildTrack();
+  });
+});
 
 function reset() {
   buildTrack();
   state='idle'; elapsed=0; progressIdx=0; flashTimer=0;
   timerEl.textContent='0.000 s';
   timerEl.style.color='white';
+  overlayStart.classList.remove('hidden');
   overlayDead.classList.add('hidden');
   overlayWin.classList.add('hidden');
 }
@@ -201,7 +234,7 @@ function drawTrack() {
   ctx.fillStyle='rgba(8,14,46,0.97)';
   ctx.fill();
 
-  ctx.lineWidth=2.5;
+  ctx.lineWidth=1.5;
   ctx.strokeStyle='rgba(61,90,254,0.7)';
   [LEFT,RIGHT].forEach(side=>{
     ctx.beginPath(); polyPath(side,0,side.length-1); ctx.stroke();
@@ -213,13 +246,14 @@ function drawTrail() {
   ctx.beginPath();
   polyPath(PATH,0,progressIdx);
   ctx.strokeStyle='rgba(0,229,255,0.2)';
-  ctx.lineWidth=HALF_W*2-7;
+  ctx.lineWidth=HALF_W*2-5;
   ctx.lineCap='round'; ctx.lineJoin='round';
   ctx.stroke();
 }
 
 function drawZones(ts) {
   const p=(Math.sin(ts*0.0042)+1)/2;
+  const fontSize = Math.max(7, Math.min(10, HALF_W - 3));
 
   const [sx,sy]=PATH[0];
   const g1=ctx.createRadialGradient(sx,sy,0,sx,sy,HALF_W);
@@ -228,7 +262,7 @@ function drawZones(ts) {
   ctx.beginPath(); ctx.arc(sx,sy,HALF_W,0,Math.PI*2);
   ctx.fillStyle=g1; ctx.fill();
   ctx.fillStyle=`rgba(0,230,118,${0.7+p*0.3})`;
-  ctx.font='bold 10px Inter,sans-serif';
+  ctx.font=`bold ${fontSize}px Inter,sans-serif`;
   ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText('START',sx,sy);
 
@@ -294,6 +328,10 @@ canvas.addEventListener('mouseleave', () => {
   if (state==='playing') { deadInfoEl.innerHTML='Mouse left the track!'; die(); }
   mx=-999; my=-999;
 });
+
+// ── Init ──────────────────────────────────────────────────────
+applyDifficulty('medium');
+buildTrack();
 
 // ── Scaling ───────────────────────────────────────────────────
 function scaleCanvas() {
