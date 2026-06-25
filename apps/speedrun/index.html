@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
-<html lang="de">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Maus-Speedrun — Playground</title>
+  <title>Mouse Speedrun — Playground</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -12,7 +12,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M19 12H5M12 5l-7 7 7 7"/>
     </svg>
-    Zurück
+    Back
   </a>
 
   <div id="hud">
@@ -27,29 +27,47 @@
   <div id="overlay-start" class="overlay">
     <div class="overlay-box">
       <div class="overlay-icon">🖱️</div>
-      <h2>Maus-Speedrun</h2>
-      <p>Folge dem Kanal mit der Maus,<br>ohne die <span class="hl-red">Wände</span> zu berühren.</p>
-      <p class="hint">Danach: Maus zum <span class="hl-green">START</span> bewegen, um zu beginnen.</p>
-      <button id="btn-start">Los geht's!</button>
+      <h2>Mouse Speedrun</h2>
+      <p>Follow the channel with your mouse,<br>without touching the <span class="hl-red">walls</span>.</p>
+      <p class="hint">Move your mouse to <span class="hl-green">START</span> to begin.</p>
+      <div class="overlay-actions">
+        <a class="btn btn-outline" href="../../index.html">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Back
+        </a>
+        <button class="btn btn-primary" id="btn-start">Let's go!</button>
+      </div>
     </div>
   </div>
 
   <div id="overlay-dead" class="overlay hidden">
-    <div class="overlay-box dead">
+    <div class="overlay-box">
       <div class="overlay-icon">💥</div>
-      <h2>Erwischt!</h2>
+      <h2>Busted!</h2>
       <p id="dead-info"></p>
-      <button id="btn-retry">Nochmal</button>
+      <div class="overlay-actions">
+        <a class="btn btn-outline" href="../../index.html">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Back
+        </a>
+        <button class="btn btn-primary" id="btn-retry">Retry</button>
+      </div>
     </div>
   </div>
 
   <div id="overlay-win" class="overlay hidden">
-    <div class="overlay-box win">
+    <div class="overlay-box">
       <div class="overlay-icon">🏁</div>
-      <h2>Ziel erreicht!</h2>
+      <h2>Finish reached!</h2>
       <p id="win-time-info"></p>
       <p id="win-record-info"></p>
-      <button id="btn-again">Nochmal</button>
+      <div class="overlay-actions">
+        <a class="btn btn-outline" href="../../index.html">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Back
+        </a>
+        <button class="btn btn-primary" id="btn-again">Play Again</button>
+      </div>
     </div>
   </div>
 

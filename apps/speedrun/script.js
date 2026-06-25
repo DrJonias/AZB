@@ -152,7 +152,6 @@ function reset() {
   state='idle'; elapsed=0; progressIdx=0; flashTimer=0;
   timerEl.textContent='0.000 s';
   timerEl.style.color='white';
-  overlayStart.classList.remove('hidden');
   overlayDead.classList.add('hidden');
   overlayWin.classList.add('hidden');
 }
@@ -161,7 +160,7 @@ function die() {
   if (state!=='playing') return;
   state='dead'; flashTimer=1.0;
   const pct=Math.round(progressIdx/PATH.length*100);
-  deadInfoEl.innerHTML=`Zeit: <strong>${fmt(elapsed)}</strong> &mdash; ${pct} % geschafft`;
+  deadInfoEl.innerHTML=`Time: <strong>${fmt(elapsed)}</strong> &mdash; ${pct} % completed`;
   overlayDead.classList.remove('hidden');
   timerEl.style.color='#ff4d6d';
 }
@@ -171,8 +170,8 @@ function win() {
   state='win';
   const isNew=best===null||elapsed<best;
   if (isNew) best=elapsed;
-  winTimeEl.innerHTML=`Zeit: <strong>${fmt(elapsed)}</strong>`;
-  winRecEl.textContent=isNew ? '🏆 Neuer Rekord!' : `Bestzeit: ${fmt(best)}`;
+  winTimeEl.innerHTML=`Time: <strong>${fmt(elapsed)}</strong>`;
+  winRecEl.textContent=isNew ? '🏆 New Record!' : `Best: ${fmt(best)}`;
   bestEl.textContent=`Best: ${fmt(best)}`;
   overlayWin.classList.remove('hidden');
   timerEl.style.color='#00e5ff';
@@ -240,7 +239,7 @@ function drawZones(ts) {
   ctx.beginPath(); ctx.arc(fx,fy,HALF_W,0,Math.PI*2);
   ctx.fillStyle=g2; ctx.fill();
   ctx.fillStyle=`rgba(0,229,255,${0.7+p*0.3})`;
-  ctx.fillText('ZIEL',fx,fy);
+  ctx.fillText('FINISH',fx,fy);
 }
 
 function drawCursor() {
@@ -292,7 +291,7 @@ canvas.addEventListener('mousemove', e => {
 });
 
 canvas.addEventListener('mouseleave', () => {
-  if (state==='playing') { deadInfoEl.innerHTML='Maus hat den Bereich verlassen!'; die(); }
+  if (state==='playing') { deadInfoEl.innerHTML='Mouse left the track!'; die(); }
   mx=-999; my=-999;
 });
 
