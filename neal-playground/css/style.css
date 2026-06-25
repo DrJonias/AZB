@@ -1,0 +1,26 @@
+:root{
+  --bg:#0b1220;
+  --card:#0f1724;
+  --muted:#9aa7c7;
+  --accent:#ffd36b;
+  --glass: rgba(255,255,255,0.04);
+  --radius:14px;
+  --gap:18px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,var(--bg) 0%, #071025 60%);color:#e6eef8}
+.site{max-width:980px;margin:48px auto;padding:24px}
+.hero{ text-align:center;padding:48px 12px 24px}
+.brand{font-weight:700;color:var(--accent);letter-spacing:.14em;text-transform:uppercase}
+.title{font-size:42px;margin:12px 0 6px}
+.subtitle{color:var(--muted);max-width:720px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--gap);margin-top:34px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:var(--radius);padding:22px;display:block;text-decoration:none;color:inherit;border:1px solid var(--glass);backdrop-filter:blur(6px);transition:transform .14s ease,box-shadow .14s ease}
+.card:hover{transform:translateY(-6px);box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+.emoji{font-size:34px}
+.name{font-weight:700;margin-top:10px}
+.desc{color:var(--muted);font-size:14px;margin-top:8px}
+.foot{text-align:center;color:var(--muted);margin:44px 0 12px}
+
+/* responsive */
+@media (max-width:520px){.title{font-size:28px}.site{margin:20px;padding:16px}}

@@ -1,0 +1,29 @@
+.app-shell{max-width:760px;margin:0 auto}
+.app-header{margin:28px 0 18px}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.18em;color:#8da3c8;margin-bottom:10px}
+.app-header h1{font-size:32px;margin:0}
+.app-intro{color:#b0bddc;max-width:680px}
+.field-label{display:block;margin-bottom:10px;color:#aab8d5;font-weight:600}
+.input-row{display:grid;grid-template-columns:1fr auto;gap:12px}
+input[type="password"], input[type="text"]{width:100%;padding:16px 16px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#fff;font-size:16px;outline:none}
+input:focus{border-color:rgba(255,211,107,.75);box-shadow:0 0 0 4px rgba(255,211,107,.1)}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:0 18px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;cursor:pointer}
+.panel{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:22px;margin-top:20px}
+.stats-panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.stat-card{padding:18px;border-radius:18px;background:rgba(255,255,255,.03)}
+.stat-label{color:#8da3c8;text-transform:uppercase;font-size:12px;letter-spacing:.14em}
+.stat-value{display:block;font-size:32px;margin-top:12px}
+.stat-note{color:#7d8fb8;font-size:13px}
+.strength-bar{margin-top:14px;height:12px;border-radius:12px;background:rgba(255,255,255,.08);overflow:hidden}
+.strength-fill{height:100%;width:0%;background:#7d9bff;border-radius:12px;transition:width .2s ease,background .2s ease}
+.chips-row{display:flex;flex-wrap:wrap;gap:10px}
+.chip{display:inline-flex;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#aab8d5;font-size:14px}
+.chip.active{background:rgba(125,155,255,.15);border-color:rgba(125,155,255,.3);color:#e6eef8}
+.time-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.time-row:last-child{border-bottom:0}
+.info-panel h2{margin-top:0;margin-bottom:10px;font-size:18px}
+.info-panel ul{margin:0;padding-left:20px;color:#c3d1f0}
+.info-panel li{margin-bottom:8px;line-height:1.6}
+.info-panel .note{margin-top:12px;color:#8da3c8;font-size:14px}
+.card-link{display:inline-block;margin-top:0;margin-bottom:20px;padding:12px 14px;border-radius:999px}
+@media (max-width:720px){.stats-panel{grid-template-columns:1fr}.input-row{grid-template-columns:1fr}.app-header h1{font-size:28px}}
