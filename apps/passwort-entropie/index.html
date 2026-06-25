@@ -1,40 +1,40 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Passwort‑Entropie — Playground</title>
+  <title>Password entropy — Playground</title>
   <link rel="stylesheet" href="../../css/style.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="site app-shell">
-    <a class="card card-link" href="../../index.html">← Zurück</a>
+    <a class="card card-link" href="../../index.html">← Back</a>
 
     <section class="app-header">
       <div>
-        <p class="eyebrow">Passwort-Tool</p>
-        <h1>Passwort‑Entropie</h1>
+        <p class="eyebrow">Password tool</p>
+        <h1>Password entropy</h1>
       </div>
-      <p class="app-intro">Berechne die Entropie deines Passworts und schätze, wie lange ein Brute-Force-Angriff dauern würde.</p>
+      <p class="app-intro">Calculate your password entropy and estimate how long a brute-force attack would take.</p>
     </section>
 
     <section class="panel input-panel">
-      <label class="field-label" for="pw-input">Passwort</label>
+      <label class="field-label" for="pw-input">Password</label>
       <div class="input-row">
-        <input id="pw-input" type="password" placeholder="Passwort eingeben …" autocomplete="off" spellcheck="false">
+        <input id="pw-input" type="password" placeholder="Enter password …" autocomplete="off" spellcheck="false">
         <button id="toggle-visibility" type="button" class="btn btn-outline">👁️</button>
       </div>
     </section>
 
     <section class="panel stats-panel">
       <div class="stat-card">
-        <span class="stat-label">Entropie</span>
+        <span class="stat-label">Entropy</span>
         <strong class="stat-value" id="entropy-number">—</strong>
         <span class="stat-note">Bits</span>
       </div>
       <div class="stat-card">
-        <span class="stat-label">Sicherheit</span>
+        <span class="stat-label">Strength</span>
         <strong class="stat-value" id="strength-label">—</strong>
         <div class="strength-bar">
           <div class="strength-fill" id="strength-fill"></div>
@@ -43,36 +43,36 @@
     </section>
 
     <section class="panel pool-panel">
-      <p class="field-label">Zeichenklassen</p>
+      <p class="field-label">Character classes</p>
       <div class="chips-row">
         <span class="chip" id="chip-lower">a–z</span>
         <span class="chip" id="chip-upper">A–Z</span>
         <span class="chip" id="chip-digits">0–9</span>
-        <span class="chip" id="chip-symbol">Sonderzeichen</span>
+        <span class="chip" id="chip-symbol">Symbols</span>
       </div>
     </section>
 
     <section class="panel time-panel">
-      <p class="field-label">Brute-Force-Dauer</p>
-      <div class="time-row"><span>Online (1.000/s)</span><strong id="time-online">—</strong></div>
-      <div class="time-row"><span>Offline (100 Mio/s)</span><strong id="time-fast">—</strong></div>
-      <div class="time-row"><span>GPU-Rig (100 Mrd/s)</span><strong id="time-gpu">—</strong></div>
-      <div class="time-row"><span>Cluster (100 Bio/s)</span><strong id="time-cluster">—</strong></div>
+      <p class="field-label">Brute force time</p>
+      <div class="time-row"><span>Online (1,000/s)</span><strong id="time-online">—</strong></div>
+      <div class="time-row"><span>Offline (100M/s)</span><strong id="time-fast">—</strong></div>
+      <div class="time-row"><span>GPU rig (100B/s)</span><strong id="time-gpu">—</strong></div>
+      <div class="time-row"><span>Cluster (100T/s)</span><strong id="time-cluster">—</strong></div>
     </section>
 
     <section class="panel info-panel">
-      <h2>Wie die Berechnung funktioniert</h2>
-      <p>Die Seite schätzt die Passwortstärke basierend auf diesen Annahmen:</p>
+      <h2>How calculation works</h2>
+      <p>The tool estimates password strength using these assumptions:</p>
       <ul>
-        <li>Je mehr verschiedene Zeichenarten verwendet werden, desto größer der Zeichensatz.</li>
-        <li>Die Entropie wird berechnet als Passwortlänge × log2(Zeichensatzgröße).</li>
-        <li>Aus der Entropie wird die Anzahl möglicher Kombinationen abgeleitet.</li>
-        <li>Die angezeigten Zeiten berechnen, wie lange ein Angreifer bei verschiedenen Geschwindigkeiten benötigen würde.</li>
+        <li>The more character sets used, the larger the character pool.</li>
+        <li>Entropy is calculated as password length × log2(pool size).</li>
+        <li>Entropy is used to derive the number of possible combinations.</li>
+        <li>The displayed times estimate how long an attacker would need at different speeds.</li>
       </ul>
-      <p class="note">Hinweis: Das ist eine mathematische Schätzung, kein vollständiger Sicherheitscheck.</p>
+      <p class="note">Note: this is a mathematical estimate, not a full security audit.</p>
     </section>
 
-    <footer class="foot">Tippe ein Passwort, um sofort eine Einschätzung zu sehen.</footer>
+    <footer class="foot">Type a password to get an instant estimate.</footer>
   </main>
 
   <script src="script.js"></script>

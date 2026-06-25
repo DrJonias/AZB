@@ -1,17 +1,102 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>QuickDraw — Playground</title>
   <link rel="stylesheet" href="../../css/style.css">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
 </head>
 <body>
-  <main class="site">
-    <a class="card" href="../../index.html">← Zurück</a>
-    <h2>QuickDraw</h2>
-    <p class="desc">Platzhalter – hier kommt die Zeichen‑App.</p>
-  </main>
+  <canvas class="confetti-canvas" id="confettiCanvas"></canvas>
+
+  <div class="overlay" id="startScreen">
+    <div class="overlay-box">
+      <div class="overlay-icon">🎨</div>
+      <h2>QuickDraw</h2>
+      <p>You get a word — draw it as quickly as possible!<br>The AI will try to guess what you are drawing.</p>
+      <div class="model-status">
+        <span class="status-dot loading" id="statusDot"></span>
+        <span id="statusText">Loading model…</span>
+      </div>
+      <div class="overlay-actions">
+        <a class="btn btn-outline" href="../../index.html">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Back
+        </a>
+        <button class="btn btn-accent" id="startBtn" disabled onclick="startGame()">Start game</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="winOverlay">
+    <div class="overlay-box win">
+      <div class="overlay-icon">🎉</div>
+      <h2>Guessed!</h2>
+      <p id="winSub"></p>
+      <div class="win-time-big" id="winTime"></div>
+      <p class="win-time-label">Seconds</p>
+      <div class="overlay-actions">
+        <a class="btn btn-outline" href="../../index.html">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Back
+        </a>
+        <button class="btn btn-primary" onclick="nextRound()">Next round</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrapper">
+    <a class="back" href="../../index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back
+    </a>
+
+    <header class="page-header">
+      <span class="page-icon">🎨</span>
+      <h1>QuickDraw</h1>
+      <p class="subtitle">Draw a word — the AI guesses in real time.</p>
+    </header>
+
+    <div class="game-layout">
+      <div class="card">
+        <div class="card-label">Draw now</div>
+        <div class="word-to-draw" id="wordLabel">–</div>
+        <div class="card-label">Time</div>
+        <div class="timer" id="timer">0.0s</div>
+
+        <div class="pen-label">Brush size</div>
+        <div class="pen-sizes">
+          <button class="pen-btn active" data-size="1" onclick="setPen(this)"><span class="pen-dot" style="width:4px;height:4px"></span></button>
+          <button class="pen-btn" data-size="2" onclick="setPen(this)"><span class="pen-dot" style="width:8px;height:8px"></span></button>
+          <button class="pen-btn" data-size="3" onclick="setPen(this)"><span class="pen-dot" style="width:13px;height:13px"></span></button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <div id="canvas-container"></div>
+        <div class="canvas-controls">
+          <button class="btn btn-outline" onclick="clearDrawing()">✕ Clear</button>
+          <button class="btn btn-outline" onclick="skipWord()">→ Skip</button>
+        </div>
+        <div class="round-info">Round <span id="roundNum">1</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label"><span class="status-dot ready" id="aiDot"></span> AI guesses</div>
+        <div class="pred-list" id="predList"><div class="pred-empty">Start drawing…</div></div>
+        <div class="top-guess-wrap">
+          <div class="top-guess-label">Best guess</div>
+          <div class="top-guess" id="topGuess">–</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>made with ♥ — <a href="../../index.html">Playground</a></footer>
+
+  <script src="script.js"></script>
 </body>
 </html>

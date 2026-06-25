@@ -28,8 +28,8 @@ function formatDuration(seconds) {
   const days = hours / 24;
   if (days < 365) return `${days.toFixed(1)} d`;
   const years = days / 365;
-  if (years < 1e6) return `${years.toFixed(1)} Jahre`;
-  return `~${Math.round(years).toLocaleString()} Jahre`;
+  if (years < 1e6) return `${years.toFixed(1)} years`;
+  return `~${Math.round(years).toLocaleString()} years`;
 }
 
 function getCharPool(password) {
@@ -53,7 +53,7 @@ function computeEntropy(password) {
 
 function updateStrength(entropy) {
   const levels = [0, 40, 60, 80, 100];
-  const label = entropy < levels[1] ? 'Sehr schwach' : entropy < levels[2] ? 'Schwach' : entropy < levels[3] ? 'Mittel' : entropy < levels[4] ? 'Stark' : 'Sehr stark';
+  const label = entropy < levels[1] ? 'Very weak' : entropy < levels[2] ? 'Weak' : entropy < levels[3] ? 'Medium' : entropy < levels[4] ? 'Strong' : 'Very strong';
   const percent = Math.min(100, Math.max(0, (entropy / 100) * 100));
   return { label, percent };
 }
