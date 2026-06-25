@@ -12,7 +12,7 @@ Lightweight collection of mini games with a playful single-page homepage. Built 
 ## Apps
 
 - `apps/passwort-entropie`
-- `apps/maus-speedrun`
+- `apps/speedrun`
 - `apps/quickdraw-guesser`
 - `apps/fake-o-meter`
 
