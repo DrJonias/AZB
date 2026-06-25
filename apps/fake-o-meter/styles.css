@@ -1,0 +1,217 @@
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, rgba(255,255,255,0.05), transparent 28%),
+              radial-gradient(circle at bottom right, rgba(61,90,254,0.12), transparent 22%),
+              linear-gradient(180deg, #080d1a 0%, #02050f 100%);
+  color: #e6eef8;
+  font-family: Inter, system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* back link */
+.back {
+  position: fixed;
+  top: 20px;
+  left: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #cbd6f2;
+  text-decoration: none;
+  font-size: 0.9rem;
+  z-index: 10;
+}
+.back svg { width: 15px; height: 15px; }
+
+/* game wrapper */
+.game-wrap {
+  width: 100%;
+  max-width: 700px;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* header */
+.game-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.game-header .icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.game-header h1 {
+  margin: 10px 0 6px;
+  font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.game-header p {
+  color: #9aa7c7;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* quote card */
+.quote-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  padding: 36px 40px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: border-color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+  position: relative;
+  margin-bottom: 28px;
+}
+
+.quote-card::before {
+  content: '\201C';
+  position: absolute;
+  top: 12px;
+  left: 24px;
+  font-size: 5rem;
+  line-height: 1;
+  color: rgba(255, 211, 107, 0.15);
+  font-family: Georgia, serif;
+  pointer-events: none;
+}
+
+.quote-card.real {
+  border-color: rgba(34, 197, 94, 0.55);
+  box-shadow: 0 0 50px rgba(34, 197, 94, 0.08);
+  background: rgba(34, 197, 94, 0.04);
+}
+
+.quote-card.fake {
+  border-color: rgba(248, 113, 113, 0.55);
+  box-shadow: 0 0 50px rgba(248, 113, 113, 0.08);
+  background: rgba(248, 113, 113, 0.04);
+}
+
+.quote-text {
+  font-size: clamp(1rem, 2.2vw, 1.2rem);
+  line-height: 1.75;
+  color: #e6eef8;
+  font-style: italic;
+  margin: 0;
+  padding-top: 16px;
+}
+
+/* choice buttons */
+.choice-row {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 0;
+}
+
+.choice-row.hidden { display: none; }
+
+.choice-btn {
+  flex: 1;
+  padding: 18px 12px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  border: 1px solid transparent;
+  letter-spacing: 0.03em;
+}
+
+.choice-btn.real-btn {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #86efac;
+}
+
+.choice-btn.fake-btn {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #fca5a5;
+}
+
+.choice-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+}
+
+.choice-btn.real-btn:hover  { background: rgba(34, 197, 94, 0.22); }
+.choice-btn.fake-btn:hover  { background: rgba(248, 113, 113, 0.22); }
+.choice-btn:active { transform: translateY(0); }
+
+/* result area */
+.result-area {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.result-area.hidden { display: none; }
+
+.verdict {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.verdict.correct { color: #86efac; }
+.verdict.wrong   { color: #fca5a5; }
+
+.reveal-tag {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.reveal-tag.real { color: #86efac; }
+.reveal-tag.fake { color: #fca5a5; }
+
+.source {
+  font-size: 0.8rem;
+  color: #6b7fa8;
+  margin: 2px 0 0;
+  font-style: italic;
+}
+
+.source.hidden { display: none; }
+
+.next-btn {
+  margin-top: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 211, 107, 1);
+  color: #0b1220;
+  border: none;
+  border-radius: 999px;
+  padding: 13px 28px;
+  font: 700 1rem/1 Inter, system-ui, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.next-btn:hover  { background: #ffe785; transform: translateY(-1px); }
+.next-btn:active { transform: translateY(0); }
+
+@media (max-width: 520px) {
+  .game-wrap { padding: 60px 16px 32px; }
+  .quote-card { padding: 28px 24px; }
+  .choice-btn { padding: 15px 8px; font-size: 0.9rem; }
+}

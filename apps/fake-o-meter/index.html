@@ -4,14 +4,41 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Fake-O-Meter — Playground</title>
-  <link rel="stylesheet" href="../../css/style.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="site">
-    <a class="card" href="../../index.html">← Back</a>
-    <h2>Fake-O-Meter</h2>
-    <p class="desc">Placeholder — guess whether statements are real.</p>
-  </main>
+
+  <a class="back" href="../../index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5M12 5l-7 7 7 7"/>
+    </svg>
+    Back
+  </a>
+
+  <div class="game-wrap">
+    <header class="game-header">
+      <div class="icon">🤥</div>
+      <h1>Fake-O-Meter</h1>
+      <p>Real Trump quote — or completely made up?</p>
+    </header>
+
+    <div class="quote-card" id="quoteCard">
+      <p class="quote-text" id="quoteText"></p>
+    </div>
+
+    <div class="choice-row" id="choiceRow">
+      <button class="choice-btn real-btn" onclick="guess(true)">✅ Real</button>
+      <button class="choice-btn fake-btn" onclick="guess(false)">❌ Fake</button>
+    </div>
+
+    <div class="result-area hidden" id="resultArea">
+      <p class="verdict" id="verdict"></p>
+      <p class="reveal-tag" id="revealTag"></p>
+      <p class="source hidden" id="source"></p>
+      <button class="next-btn" onclick="nextQuote()">Next quote →</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
