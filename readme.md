@@ -15,3 +15,10 @@ Lightweight collection of mini games with a playful single-page homepage. Built 
 - `apps/speedrun`
 - `apps/quickdraw-guesser`
 - `apps/fake-o-meter`
+
+
+## ToDo
+
+- Mobile view
+- Clock-In / Clock-Out
+- Nail concept marble game
