@@ -8,28 +8,38 @@ services:
       - "8080:80"
     volumes:
       - ./site:/usr/share/nginx/html:ro
+      # dev-Checkout als Unterordner /dev im Webroot — so greifen alle
+      # Location-Regeln (Cache-Header, Dotfile-Block) automatisch auch dort
+      - ./site-dev:/usr/share/nginx/html/dev:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
 
+  # Hält ./site (master) und ./site-dev (dev) per git pull aktuell
   webhook:
     image: alpine/git
     container_name: azb-webhook
     restart: unless-stopped
     volumes:
       - ./site:/site
+      - ./site-dev:/site-dev
     entrypoint: >
       sh -c "
-        git config --global --add safe.directory /site;
         if [ ! -d /site/.git ]; then
-          git clone https://github.com/DrJonias/AZB /site;
+          git clone -b master https://github.com/DrJonias/AZB /site;
+        fi;
+        if [ ! -d /site-dev/.git ]; then
+          git clone -b dev https://github.com/DrJonias/AZB /site-dev;
         fi;
         while true; do
           sleep 60;
-          git -C /site pull || echo 'pull failed';
+          git -C /site pull || echo 'pull site failed';
+          git -C /site-dev pull || echo 'pull site-dev failed';
         done
       "
 
-  # Backend für apps/zen-garden. Kein eigenes Image nötig — läuft direkt aus
-  # dem git-Checkout, den der webhook-Container ohnehin aktuell hält.
+  # Produktiv-Backend (Zen Garden, Feedback, Highscores) — läuft direkt aus
+  # dem git-Checkout, kein eigenes Image nötig. Der node-Prozess wird
+  # spätestens alle 5 Minuten neu gestartet und übernimmt so automatisch
+  # Code-Änderungen aus dem Pull.
   zen-garden:
     image: node:20-alpine
     container_name: azb-zen-garden
@@ -40,12 +50,27 @@ services:
     environment:
       - DATA_DIR=/data
       # Optional: Token setzen, um Feedback im Browser zu lesen unter
-      # https://<domain>/api/feedback?token=<wert> (sonst nur Datei im data-Ordner)
+      # https://<domain>/api/feedback?token=<wert>
       # - FEEDBACK_TOKEN=irgendein-langes-geheimnis
-    # server.js läuft, bis es crasht oder maximal 5 Minuten vergangen sind,
-    # dann startet die Schleife es neu — dadurch übernimmt es automatisch
-    # Code-Änderungen, die der webhook-Container reingezogen hat, ohne dass
-    # hier ein Docker-Rebuild oder Zugriff auf den Docker-Socket nötig wäre.
+    command: >
+      sh -c "
+        while true; do
+          timeout 300 node /site/apps/zen-garden/server/server.js;
+          sleep 2;
+        done
+      "
+
+  # Getrenntes Dev-Backend mit eigenem Datenordner — gleiche Mechanik,
+  # läuft aus dem dev-Checkout. Erreichbar über /dev/api/ (nginx-Proxy).
+  zen-garden-dev:
+    image: node:20-alpine
+    container_name: azb-zen-garden-dev
+    restart: unless-stopped
+    volumes:
+      - ./site-dev:/site:ro
+      - ./zen-garden-data-dev:/data
+    environment:
+      - DATA_DIR=/data
     command: >
       sh -c "
         while true; do

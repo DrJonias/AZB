@@ -1,9 +1,11 @@
 // Zen Garden frontend — talks to the small Node backend in ./server.
 // One action per player per minute; the server is the source of truth.
 
-// Same-origin in production (nginx proxies /api/ to the backend);
-// localhost fallback only for opening the file directly during development.
-const apiBase = location.protocol.startsWith('http') ? location.origin : 'http://localhost:8787';
+// Same-origin in production (nginx proxies /api/ to the backend). Pages under
+// /dev/ talk to the separate dev backend via /dev/api/ instead. The localhost
+// fallback is only for opening the file directly during development.
+const basePath = location.pathname.startsWith('/dev/') ? '/dev' : '';
+const apiBase = location.protocol.startsWith('http') ? location.origin + basePath : 'http://localhost:8787';
 
 let playerName = localStorage.getItem('zen-name') || '';
 let state = null;          // last server state

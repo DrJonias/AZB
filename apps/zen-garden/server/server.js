@@ -29,6 +29,41 @@ const FEEDBACK_TOKEN = process.env.FEEDBACK_TOKEN || '';
 const FEEDBACK_COOLDOWN_MS = 60 * 1000;
 const feedbackLast = new Map();      // ip → last submission ts (in-memory only)
 
+// Global highscores, one board per game (allowlist so nobody creates
+// arbitrary boards). Keeps each player's best score only.
+const SCORE_GAMES = ['doodle-jump'];
+const SCORES_FILE = path.join(DATA_DIR, 'scores.json');
+const SCORE_COOLDOWN_MS = 10 * 1000;
+const SCORE_MAX_ENTRIES = 100;
+const scoreLast = new Map();         // ip → last submission ts
+let scores = {};                     // game → [{ name, score, ts }] sorted desc
+
+function loadScores() {
+  try { scores = JSON.parse(fs.readFileSync(SCORES_FILE, 'utf8')); } catch { scores = {}; }
+}
+
+function saveScores() {
+  fs.writeFile(SCORES_FILE, JSON.stringify(scores, null, 2), err => {
+    if (err) console.error('scores save failed:', err.message);
+  });
+}
+
+function submitScore(game, name, score) {
+  const board = scores[game] || (scores[game] = []);
+  const existing = board.find(e => e.name === name);
+  if (existing) {
+    if (score <= existing.score) return board;
+    existing.score = score;
+    existing.ts = Date.now();
+  } else {
+    board.push({ name, score, ts: Date.now() });
+  }
+  board.sort((a, b) => b.score - a.score);
+  scores[game] = board.slice(0, SCORE_MAX_ENTRIES);
+  saveScores();
+  return scores[game];
+}
+
 // Growth = number of community waterings until fully grown.
 // Unlock = lifetime community clicks needed before the species can be planted.
 // Deliberately steep — the garden is meant to grow over months, not days.
@@ -195,6 +230,41 @@ const server = http.createServer((req, res) => {
     return send(res, 200, stateFor(cleanName(url.searchParams.get('player'))));
   }
 
+  // Highscores: GET /api/scores/<game> · POST /api/scores/<game> {name, score}
+  const scoreMatch = url.pathname.match(/^\/api\/scores\/([a-z0-9-]+)$/);
+  if (scoreMatch) {
+    const game = scoreMatch[1];
+    if (!SCORE_GAMES.includes(game)) return send(res, 404, { error: 'Unbekanntes Spiel.' });
+
+    if (req.method === 'GET') {
+      return send(res, 200, { scores: (scores[game] || []).slice(0, 50) });
+    }
+    if (req.method === 'POST') {
+      const last = scoreLast.get(ip) || 0;
+      if (Date.now() - last < SCORE_COOLDOWN_MS) {
+        return send(res, 429, { error: 'Bitte warte kurz vor dem nächsten Eintrag.' });
+      }
+      let raw = '';
+      req.on('data', c => { raw += c; if (raw.length > 2048) req.destroy(); });
+      req.on('end', () => {
+        let body;
+        try { body = JSON.parse(raw); } catch { return send(res, 400, { error: 'Kaputtes JSON.' }); }
+        const name = cleanName(body.player);
+        if (!name) return send(res, 400, { error: 'Bitte gib einen Namen mit 2–20 Zeichen an.' });
+        const score = Number(body.score);
+        if (!Number.isInteger(score) || score < 1 || score > 1000000) {
+          return send(res, 400, { error: 'Ungültiger Score.' });
+        }
+        scoreLast.set(ip, Date.now());
+        const board = submitScore(game, name, score);
+        const rank = board.findIndex(e => e.name === name) + 1;
+        return send(res, 200, { scores: board.slice(0, 50), rank: rank || null });
+      });
+      return;
+    }
+    return send(res, 405, { error: 'Methode nicht erlaubt.' });
+  }
+
   if (url.pathname === '/api/feedback' && req.method === 'POST') {
     const last = feedbackLast.get(ip) || 0;
     if (Date.now() - last < FEEDBACK_COOLDOWN_MS) {
@@ -263,4 +333,5 @@ const server = http.createServer((req, res) => {
 });
 
 loadGarden();
+loadScores();
 server.listen(PORT, () => console.log(`🪴 Zen Garden läuft auf http://localhost:${PORT}`));

@@ -98,6 +98,18 @@ kein Docker-Rebuild und kein Zugriff auf den Docker-Socket nötig. Der
 Spielstand übersteht das dank des separaten `zen-garden-data`-Volumes
 klaglos.
 
+## Weitere APIs auf diesem Server
+
+Der Server ist inzwischen das Site-Backend und bedient neben dem Zen Garden auch:
+
+- **Highscores** (`GET`/`POST /api/scores/<spiel>`, z. B. `doodle-jump`) — pro Name
+  zählt nur der beste Score, gespeichert in `scores.json` im Datenordner.
+- **Feedback** (siehe unten).
+
+Für die Dev-Umgebung unter `/dev` läuft eine zweite, getrennte Instanz mit eigenem
+Datenordner (`zen-garden-data-dev`) — siehe `deploy/docker-compose.yml`. Das
+Frontend erkennt am URL-Pfad selbst, welches Backend es ansprechen muss.
+
 ## Feedback-Formular
 
 Der Server nimmt auch das anonyme Feedback der Startseite entgegen

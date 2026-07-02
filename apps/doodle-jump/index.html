@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Doodle Jump — Playground</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐸</text></svg>">
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+
+  <div class="wrapper">
+    <a class="back" href="../../">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Zurück
+    </a>
+
+    <header class="page-header">
+      <span class="page-icon">🐸</span>
+      <h1>Doodle Jump</h1>
+      <p class="subtitle">Spring so hoch du kannst — und trag dich ins globale Scoreboard ein.</p>
+    </header>
+
+    <div class="game-layout">
+
+      <div class="canvas-wrap">
+        <canvas id="game" width="400" height="600"></canvas>
+
+        <div class="overlay" id="startOverlay">
+          <div class="overlay-box">
+            <div class="overlay-icon">🐸</div>
+            <h2>Doodle Jump</h2>
+            <p>
+              <span class="hint-desktop">Steuern mit ← → oder A/D.</span>
+              <span class="hint-touch">Tippe links/rechts vom Frosch oder neige dein Handy.</span>
+              Oben rausspringen gibt Punkte — unten runterfallen beendet den Lauf.
+            </p>
+            <button class="btn btn-accent" id="startBtn">Los geht's</button>
+          </div>
+        </div>
+
+        <div class="overlay hidden" id="overOverlay">
+          <div class="overlay-box">
+            <div class="overlay-icon">💀</div>
+            <h2>Runter gefallen!</h2>
+            <div class="final-score" id="finalScore">0</div>
+            <p class="final-best" id="finalBest"></p>
+            <div class="submit-row" id="submitRow">
+              <input type="text" id="nameInput" maxlength="20" placeholder="Dein Name">
+              <button class="btn btn-accent" id="submitBtn">Eintragen</button>
+            </div>
+            <p class="submit-status" id="submitStatus"></p>
+            <button class="btn" id="retryBtn">↺ Nochmal</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel board-panel">
+        <h2>🏆 Global Top 10</h2>
+        <ol class="board-list" id="boardList"><li class="board-empty">Lade…</li></ol>
+        <div class="my-best">Dein Rekord: <strong id="myBest">–</strong></div>
+      </aside>
+
+    </div>
+  </div>
+
+  <footer>made with ♥ — <a href="../../">Playground</a></footer>
+
+  <script src="script.js?v=1"></script>
+</body>
+</html>
