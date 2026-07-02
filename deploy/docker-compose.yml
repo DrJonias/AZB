@@ -1,4 +1,18 @@
 version: '3'
+
+# Deploy-Vorlage fürs NAS. Ordnerstruktur neben dieser Datei:
+#   ./site          master-Checkout  (legt der webhook-Container selbst an)
+#   ./site-dev      dev-Checkout     (dito)
+#   ./nginx         default.conf     (einmalig aus deploy/nginx/ kopieren — oder
+#                                     Auto-Update-Variante beim web-Service nutzen)
+#   ./backend-data      Daten Produktion (garden-data.json, scores.json, feedback.jsonl)
+#   ./backend-data-dev  Daten Dev
+#
+# Code-Änderungen deployen sich selbst: webhook pullt jede Minute, die
+# Backend-Container starten ihren node-Prozess spätestens alle 5 Minuten neu.
+# Diese Compose-Datei muss nur angefasst werden, wenn sich die Container-
+# Topologie selbst ändert (neuer Service, anderer Port).
+
 services:
   web:
     image: nginx:alpine
@@ -12,6 +26,12 @@ services:
       # Location-Regeln (Cache-Header, Dotfile-Block) automatisch auch dort
       - ./site-dev:/usr/share/nginx/html/dev:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # ── Auto-Update-Variante (erst NACH dem Merge von deploy/ nach master!):
+      # obige default.conf-Zeile ersetzen durch:
+      #   - ./site/deploy/nginx:/etc/nginx/conf.d:ro
+      # und zusätzlich unten das command einkommentieren — nginx lädt die
+      # Config dann alle 5 Minuten neu, Änderungen kommen per git pull.
+    # command: sh -c "while :; do sleep 300; nginx -s reload; done & exec nginx -g 'daemon off;'"
 
   # Hält ./site (master) und ./site-dev (dev) per git pull aktuell
   webhook:
@@ -36,17 +56,18 @@ services:
         done
       "
 
-  # Produktiv-Backend (Zen Garden, Feedback, Highscores) — läuft direkt aus
+  # Produktiv-Backend (Zen Garden, Highscores, Feedback) — läuft direkt aus
   # dem git-Checkout, kein eigenes Image nötig. Der node-Prozess wird
   # spätestens alle 5 Minuten neu gestartet und übernimmt so automatisch
-  # Code-Änderungen aus dem Pull.
-  zen-garden:
+  # Code-Änderungen aus dem Pull. Der Pfad-Fallback deckt Checkouts ab,
+  # in denen der Server noch unter apps/zen-garden/server/ liegt.
+  backend:
     image: node:20-alpine
-    container_name: azb-zen-garden
+    container_name: azb-backend
     restart: unless-stopped
     volumes:
       - ./site:/site:ro
-      - ./zen-garden-data:/data
+      - ./backend-data:/data
     environment:
       - DATA_DIR=/data
       # Optional: Token setzen, um Feedback im Browser zu lesen unter
@@ -55,26 +76,30 @@ services:
     command: >
       sh -c "
         while true; do
-          timeout 300 node /site/apps/zen-garden/server/server.js;
+          S=/site/server/server.js;
+          [ -f $$S ] || S=/site/apps/zen-garden/server/server.js;
+          timeout 300 node $$S;
           sleep 2;
         done
       "
 
   # Getrenntes Dev-Backend mit eigenem Datenordner — gleiche Mechanik,
   # läuft aus dem dev-Checkout. Erreichbar über /dev/api/ (nginx-Proxy).
-  zen-garden-dev:
+  backend-dev:
     image: node:20-alpine
-    container_name: azb-zen-garden-dev
+    container_name: azb-backend-dev
     restart: unless-stopped
     volumes:
       - ./site-dev:/site:ro
-      - ./zen-garden-data-dev:/data
+      - ./backend-data-dev:/data
     environment:
       - DATA_DIR=/data
     command: >
       sh -c "
         while true; do
-          timeout 300 node /site/apps/zen-garden/server/server.js;
+          S=/site/server/server.js;
+          [ -f $$S ] || S=/site/apps/zen-garden/server/server.js;
+          timeout 300 node $$S;
           sleep 2;
         done
       "

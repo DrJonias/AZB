@@ -1,11 +1,13 @@
 /*
- * Zen Garden — zero-dependency Node.js backend.
+ * Site-Backend — zero-dependency Node.js server.
  *
  *   node server/server.js          → http://localhost:8787
  *   PORT=3000 node server/server.js
  *
- * Serves the frontend (parent folder) and a small JSON API.
- * State is persisted to garden-data.json next to this file.
+ * Serves the whole static site (repo root) plus the JSON APIs:
+ * Zen Garden (/api/state, /api/action), highscores (/api/scores/<game>)
+ * and anonymous feedback (/api/feedback).
+ * State is persisted as JSON files in DATA_DIR (default: this folder).
  */
 const http = require('http');
 const fs = require('fs');
@@ -319,9 +321,9 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Static frontend (never the server/ folder itself)
-  if (req.method === 'GET') {
-    const rel = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
+  // Static frontend (never the server/ folder itself, never dotfiles like .git)
+  if (req.method === 'GET' && !url.pathname.split('/').some(seg => seg.startsWith('.'))) {
+    const rel = (url.pathname.endsWith('/') ? url.pathname + 'index.html' : url.pathname).slice(1);
     const file = path.resolve(APP_DIR, rel);
     const inApp = file.startsWith(APP_DIR + path.sep) && !file.startsWith(__dirname + path.sep);
     if (inApp && fs.existsSync(file) && fs.statSync(file).isFile()) {

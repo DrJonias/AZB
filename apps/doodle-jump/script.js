@@ -1,4 +1,4 @@
-// Doodle Jump — canvas game with a global scoreboard (backend: zen-garden server).
+// Doodle Jump — canvas game with a global scoreboard (backend: server/server.js, the shared site backend).
 
 const CW = 400, CH = 600;
 const GRAVITY = 0.35;
