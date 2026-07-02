@@ -158,8 +158,9 @@ function openPicker(plotIdx) {
     btn.className = 'picker-item';
     btn.innerHTML = `<span>${sp.emoji}</span><span>${sp.name}</span><span class="sp-info">${sp.growth.toLocaleString('de-DE')} 💧</span>`;
     btn.addEventListener('click', () => {
+      const plot = pickerPlot;   // closePicker() nulls pickerPlot — grab it first
       closePicker();
-      sendAction('plant', pickerPlot, sp.id);
+      sendAction('plant', plot, sp.id);
     });
     list.appendChild(btn);
   });
