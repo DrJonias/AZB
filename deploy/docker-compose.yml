@@ -46,6 +46,8 @@ services:
       - ./site-dev:/site-dev
     entrypoint: >
       sh -c "
+        git config --global --add safe.directory /site;
+        git config --global --add safe.directory /site-dev;
         if [ ! -d /site/.git ]; then
           git clone -b master https://github.com/DrJonias/AZB /site;
         fi;
