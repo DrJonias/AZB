@@ -18,12 +18,13 @@ services:
       - ./site:/site
     entrypoint: >
       sh -c "
+        git config --global --add safe.directory /site;
         if [ ! -d /site/.git ]; then
           git clone https://github.com/DrJonias/AZB /site;
         fi;
         while true; do
           sleep 60;
-          git -C /site pull;
+          git -C /site pull || echo 'pull failed';
         done
       "
 
