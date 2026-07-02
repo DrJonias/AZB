@@ -22,6 +22,21 @@ html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;back
 .desc{color:var(--muted);font-size:14px;margin-top:8px}
 .foot{text-align:center;color:var(--muted);margin:44px 0 12px}
 
+/* feedback widget */
+.fb-fab{position:fixed;right:18px;bottom:18px;z-index:40;border:1px solid rgba(255,255,255,.15);background:#101a30;color:#e6eef8;border-radius:999px;padding:10px 16px;font-size:14px;font-family:inherit;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.fb-fab:hover{border-color:rgba(255,211,107,.6)}
+.fb-panel{position:fixed;right:18px;bottom:70px;z-index:41;width:min(320px,calc(100vw - 36px));background:#101a30;border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:18px;box-shadow:0 16px 40px rgba(0,0,0,.55)}
+.fb-panel.hidden{display:none}
+.fb-panel h3{margin:0 0 6px;font-size:16px}
+.fb-hint{color:var(--muted);font-size:12px;margin:0 0 10px}
+.fb-panel textarea{width:100%;box-sizing:border-box;resize:vertical;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#fff;font-family:inherit;font-size:14px;outline:none}
+.fb-panel textarea:focus{border-color:rgba(255,211,107,.7)}
+.fb-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+.fb-btn{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;font-family:inherit;cursor:pointer}
+.fb-btn:hover{background:rgba(255,255,255,.12)}
+.fb-send{border-color:rgba(255,211,107,.4);color:var(--accent)}
+.fb-status{color:var(--muted);font-size:12px;margin:8px 0 0;min-height:14px}
+
 /* responsive */
 @media (max-width:640px){
   .site{margin:16px auto;padding:16px}

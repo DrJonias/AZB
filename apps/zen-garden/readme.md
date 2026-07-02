@@ -21,9 +21,9 @@ Anderer Port: `PORT=3000 node apps/zen-garden/server/server.js`
 ## Deployment
 
 Den Ordner `apps/zen-garden` auf einen Server mit Node.js legen und `server/server.js`
-starten (z. B. via systemd oder pm2). Wird das Frontend woanders gehostet (z. B. GitHub
-Pages), im Spiel unten unter „Server-Adresse" die URL des Backends eintragen — CORS ist
-offen konfiguriert.
+starten (z. B. via systemd oder pm2). Das Frontend spricht die API auf derselben
+Origin an (`/api/...`) — Frontend und Backend müssen also unter derselben Adresse
+erreichbar sein, z. B. über einen Reverse-Proxy wie in `deploy/default.conf`.
 
 ### Auf einem NAS (Docker)
 
@@ -97,6 +97,17 @@ so automatisch Code-Änderungen, die der bestehende Pull-Container reinzieht —
 kein Docker-Rebuild und kein Zugriff auf den Docker-Socket nötig. Der
 Spielstand übersteht das dank des separaten `zen-garden-data`-Volumes
 klaglos.
+
+## Feedback-Formular
+
+Der Server nimmt auch das anonyme Feedback der Startseite entgegen
+(`POST /api/feedback`, max. 1× pro Minute pro IP) und hängt es zeilenweise an
+`feedback.jsonl` im Datenordner an — gespeichert werden nur Zeitpunkt, Seite und
+Text (keine IP, kein User-Agent). Lesen:
+
+- **File Station:** `/docker/azb/zen-garden-data/feedback.jsonl` öffnen.
+- **Browser (optional):** In der Compose-Datei `FEEDBACK_TOKEN` setzen, dann ist
+  das Feedback unter `https://<domain>/api/feedback?token=<wert>` als JSON abrufbar.
 
 ## Spielregeln
 

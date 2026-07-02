@@ -1,9 +1,10 @@
 // Zen Garden frontend — talks to the small Node backend in ./server.
 // One action per player per minute; the server is the source of truth.
 
-const DEFAULT_API = location.protocol.startsWith('http') ? location.origin : 'http://localhost:8787';
+// Same-origin in production (nginx proxies /api/ to the backend);
+// localhost fallback only for opening the file directly during development.
+const apiBase = location.protocol.startsWith('http') ? location.origin : 'http://localhost:8787';
 
-let apiBase = localStorage.getItem('zen-api') || DEFAULT_API;
 let playerName = localStorage.getItem('zen-name') || '';
 let state = null;          // last server state
 let nextActionAt = 0;      // local timestamp when the next click is allowed
@@ -198,13 +199,6 @@ $('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('name
 
 $('pickerCancel').addEventListener('click', closePicker);
 $('picker').addEventListener('click', e => { if (e.target === $('picker')) closePicker(); });
-
-$('apiInput').value = apiBase;
-$('apiBtn').addEventListener('click', () => {
-  apiBase = $('apiInput').value.trim().replace(/\/+$/, '') || DEFAULT_API;
-  localStorage.setItem('zen-api', apiBase);
-  fetchState();
-});
 
 if (playerName) enterGarden(playerName);
 setInterval(() => { if (playerName) fetchState(); }, 15 * 1000);

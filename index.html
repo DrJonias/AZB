@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Playground — Mini Games</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body>
   <main class="site">
@@ -64,9 +64,21 @@
       </a>
     </section>
 
-    <footer class="foot">Made with ♥ — Playground --- Version 1.0</footer>
+    <footer class="foot">Made with ♥ — Playground --- Version 1.1</footer>
   </main>
 
-  <script src="js/main.js"></script>
+  <button class="fb-fab" id="fbOpen" aria-label="Feedback geben">💬 Feedback</button>
+  <div class="fb-panel hidden" id="fbPanel" role="dialog" aria-label="Feedback">
+    <h3>Feedback</h3>
+    <p class="fb-hint">Anonym — es werden weder Name noch IP-Adresse gespeichert.</p>
+    <textarea id="fbText" maxlength="2000" rows="4" placeholder="Was gefällt dir, was fehlt, was ist kaputt?"></textarea>
+    <div class="fb-actions">
+      <button class="fb-btn" id="fbCancel">Abbrechen</button>
+      <button class="fb-btn fb-send" id="fbSend">Senden</button>
+    </div>
+    <p class="fb-status" id="fbStatus"></p>
+  </div>
+
+  <script src="js/main.js?v=2"></script>
 </body>
 </html>

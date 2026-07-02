@@ -16,10 +16,18 @@ const DATA_DIR = process.env.DATA_DIR || __dirname;
 const DATA_FILE = path.join(DATA_DIR, 'garden-data.json');
 const APP_DIR = path.resolve(__dirname, '..');
 
-const PLOT_COUNT = 20;
+const PLOT_COUNT = 24;   // divisible by 6/4/3 → the grid always shows full rows
 const COOLDOWN_MS = 60 * 1000;       // 1 action per player per minute
 const IP_THROTTLE_MS = 1500;         // basic request throttle per IP
 const LOG_MAX = 15;
+
+// Anonymous site feedback — appended as JSON lines, one entry per line.
+// Readable via File Station (DATA_DIR is bind-mounted) or, if FEEDBACK_TOKEN
+// is set, via GET /api/feedback?token=...
+const FEEDBACK_FILE = path.join(DATA_DIR, 'feedback.jsonl');
+const FEEDBACK_TOKEN = process.env.FEEDBACK_TOKEN || '';
+const FEEDBACK_COOLDOWN_MS = 60 * 1000;
+const feedbackLast = new Map();      // ip → last submission ts (in-memory only)
 
 // Growth = number of community waterings until fully grown.
 // Unlock = lifetime community clicks needed before the species can be planted.
@@ -185,6 +193,42 @@ const server = http.createServer((req, res) => {
 
   if (url.pathname === '/api/state' && req.method === 'GET') {
     return send(res, 200, stateFor(cleanName(url.searchParams.get('player'))));
+  }
+
+  if (url.pathname === '/api/feedback' && req.method === 'POST') {
+    const last = feedbackLast.get(ip) || 0;
+    if (Date.now() - last < FEEDBACK_COOLDOWN_MS) {
+      return send(res, 429, { error: 'Bitte warte eine Minute bis zum nächsten Feedback.' });
+    }
+    let raw = '';
+    req.on('data', c => { raw += c; if (raw.length > 8192) req.destroy(); });
+    req.on('end', () => {
+      let body;
+      try { body = JSON.parse(raw); } catch { return send(res, 400, { error: 'Kaputtes JSON.' }); }
+      const text = String(body.text || '').trim().slice(0, 2000);
+      if (text.length < 3) return send(res, 400, { error: 'Bitte schreib ein paar Zeichen mehr.' });
+      // Deliberately anonymous: timestamp, page and text only — no IP, no user agent.
+      const entry = { ts: new Date().toISOString(), page: String(body.page || '').slice(0, 200), text };
+      feedbackLast.set(ip, Date.now());
+      fs.appendFile(FEEDBACK_FILE, JSON.stringify(entry) + '\n', err => {
+        if (err) return send(res, 500, { error: 'Speichern fehlgeschlagen.' });
+        send(res, 200, { ok: true });
+      });
+    });
+    return;
+  }
+
+  // Feedback einsehen — nur wenn FEEDBACK_TOKEN als Env-Variable gesetzt ist.
+  if (url.pathname === '/api/feedback' && req.method === 'GET') {
+    if (!FEEDBACK_TOKEN || url.searchParams.get('token') !== FEEDBACK_TOKEN) {
+      return send(res, 404, { error: 'Nicht gefunden.' });
+    }
+    let entries = [];
+    try {
+      entries = fs.readFileSync(FEEDBACK_FILE, 'utf8')
+        .split('\n').filter(Boolean).map(l => JSON.parse(l)).reverse();
+    } catch { /* no feedback yet */ }
+    return send(res, 200, entries);
   }
 
   if (url.pathname === '/api/action' && req.method === 'POST') {

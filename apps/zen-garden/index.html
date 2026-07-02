@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Zen Garden — Playground</title>
   <link rel="stylesheet" href="../../css/style.css">
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
@@ -41,8 +41,8 @@
       </div>
 
       <div class="offline hidden" id="offlineBanner">
-        Server nicht erreichbar. Starte ihn mit <code>node apps/zen-garden/server/server.js</code>
-        oder trage unten die Server-Adresse ein.
+        Server nicht erreichbar — bitte später noch einmal versuchen.
+        <span class="offline-dev">(Lokal: <code>node apps/zen-garden/server/server.js</code>)</span>
       </div>
 
       <section class="garden" id="garden" aria-label="Gartenbeete"></section>
@@ -67,11 +67,6 @@
         </section>
       </div>
 
-      <div class="api-row">
-        <label for="apiInput">Server-Adresse:</label>
-        <input type="text" id="apiInput" placeholder="http://localhost:8787">
-        <button class="btn" id="apiBtn">Übernehmen</button>
-      </div>
     </div>
 
     <!-- Species picker for empty plots -->
@@ -88,6 +83,6 @@
 
   <footer>made with ♥ — <a href="../../">Playground</a></footer>
 
-  <script src="script.js?v=2"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>

@@ -81,10 +81,10 @@ input:focus { border-color: rgba(255, 211, 107, 0.75); box-shadow: 0 0 0 4px rgb
 }
 .offline code { background: rgba(0, 0, 0, 0.35); padding: 2px 6px; border-radius: 6px; }
 
-/* Garden grid */
+/* Garden grid — fixed column counts (6/4/3) so 24 plots always fill full rows */
 .garden {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -148,13 +148,7 @@ input:focus { border-color: rgba(255, 211, 107, 0.75); box-shadow: 0 0 0 4px rgb
 .log-list li { padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
 .log-list li:last-child { border-bottom: 0; }
 
-/* API row */
-.api-row {
-  display: flex; align-items: center; gap: 10px;
-  margin-top: 20px; font-size: 13px; color: var(--muted);
-}
-.api-row input { flex: 1; padding: 9px 12px; font-size: 13px; }
-.api-row .btn { padding: 9px 14px; font-size: 13px; }
+.offline-dev { color: var(--muted); }
 
 /* Picker */
 .picker-overlay {
@@ -197,7 +191,10 @@ footer a { color: var(--accent); text-decoration: none; }
   .wrapper { padding: 14px; }
   .page-header h1 { font-size: 28px; }
   .columns { grid-template-columns: 1fr; }
-  .garden { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+  .garden { grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .plot-emoji { font-size: 28px; }
-  .api-row { flex-wrap: wrap; }
+}
+
+@media (max-width: 460px) {
+  .garden { grid-template-columns: repeat(3, 1fr); }
 }

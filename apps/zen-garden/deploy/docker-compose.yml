@@ -39,6 +39,9 @@ services:
       - ./zen-garden-data:/data
     environment:
       - DATA_DIR=/data
+      # Optional: Token setzen, um Feedback im Browser zu lesen unter
+      # https://<domain>/api/feedback?token=<wert> (sonst nur Datei im data-Ordner)
+      # - FEEDBACK_TOKEN=irgendein-langes-geheimnis
     # server.js läuft, bis es crasht oder maximal 5 Minuten vergangen sind,
     # dann startet die Schleife es neu — dadurch übernimmt es automatisch
     # Code-Änderungen, die der webhook-Container reingezogen hat, ohne dass
