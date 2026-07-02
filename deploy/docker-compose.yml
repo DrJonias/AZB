@@ -1,17 +1,22 @@
 version: '3'
 
 # Deploy-Vorlage fürs NAS. Ordnerstruktur neben dieser Datei:
-#   ./site          master-Checkout  (legt der webhook-Container selbst an)
-#   ./site-dev      dev-Checkout     (dito)
-#   ./nginx         default.conf     (einmalig aus deploy/nginx/ kopieren — oder
-#                                     Auto-Update-Variante beim web-Service nutzen)
+#   ./site              master-Checkout  (legt der webhook-Container selbst an)
+#   ./site-dev          dev-Checkout     (dito)
 #   ./backend-data      Daten Produktion (garden-data.json, scores.json, feedback.jsonl)
 #   ./backend-data-dev  Daten Dev
 #
-# Code-Änderungen deployen sich selbst: webhook pullt jede Minute, die
-# Backend-Container starten ihren node-Prozess spätestens alle 5 Minuten neu.
-# Diese Compose-Datei muss nur angefasst werden, wenn sich die Container-
-# Topologie selbst ändert (neuer Service, anderer Port).
+# Alles deployt sich von selbst: webhook pullt jede Minute, die Backend-
+# Container starten ihren node-Prozess spätestens alle 5 Minuten neu, und
+# nginx lädt seine Config (kommt direkt aus dem Checkout, siehe unten) auf
+# demselben Rhythmus neu. Diese Compose-Datei muss nur angefasst werden,
+# wenn sich die Container-Topologie selbst ändert (neuer Service, anderer
+# Port) — sonst reicht ein "git push".
+#
+# Achtung beim allerersten "up" auf einem leeren NAS-Ordner: ./site und
+# ./site-dev müssen als (leere) Ordner bereits existieren, sonst schlagen
+# die Bind-Mounts fehl (Docker legt fehlende Mount-Quellen nicht selbst an).
+# mkdir -p site site-dev backend-data backend-data-dev vor dem ersten Start.
 
 services:
   web:
@@ -25,13 +30,11 @@ services:
       # dev-Checkout als Unterordner /dev im Webroot — so greifen alle
       # Location-Regeln (Cache-Header, Dotfile-Block) automatisch auch dort
       - ./site-dev:/usr/share/nginx/html/dev:ro
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      # ── Auto-Update-Variante (erst NACH dem Merge von deploy/ nach master!):
-      # obige default.conf-Zeile ersetzen durch:
-      #   - ./site/deploy/nginx:/etc/nginx/conf.d:ro
-      # und zusätzlich unten das command einkommentieren — nginx lädt die
-      # Config dann alle 5 Minuten neu, Änderungen kommen per git pull.
-    # command: sh -c "while :; do sleep 300; nginx -s reload; done & exec nginx -g 'daemon off;'"
+      # Config kommt direkt aus dem master-Checkout (nicht aus site-dev —
+      # dieselbe Datei bedient ohnehin beide Umgebungen) und zieht sich so
+      # bei jedem webhook-Pull automatisch nach.
+      - ./site/deploy/nginx:/etc/nginx/conf.d:ro
+    command: sh -c "while :; do sleep 300; nginx -s reload; done & exec nginx -g 'daemon off;'"
 
   # Hält ./site (master) und ./site-dev (dev) per git pull aktuell
   webhook:
@@ -59,8 +62,7 @@ services:
   # Produktiv-Backend (Zen Garden, Highscores, Feedback) — läuft direkt aus
   # dem git-Checkout, kein eigenes Image nötig. Der node-Prozess wird
   # spätestens alle 5 Minuten neu gestartet und übernimmt so automatisch
-  # Code-Änderungen aus dem Pull. Der Pfad-Fallback deckt Checkouts ab,
-  # in denen der Server noch unter apps/zen-garden/server/ liegt.
+  # Code-Änderungen aus dem Pull.
   backend:
     image: node:20-alpine
     container_name: azb-backend
@@ -76,9 +78,7 @@ services:
     command: >
       sh -c "
         while true; do
-          S=/site/server/server.js;
-          [ -f $$S ] || S=/site/apps/zen-garden/server/server.js;
-          timeout 300 node $$S;
+          timeout 300 node /site/server/server.js;
           sleep 2;
         done
       "
@@ -97,9 +97,7 @@ services:
     command: >
       sh -c "
         while true; do
-          S=/site/server/server.js;
-          [ -f $$S ] || S=/site/apps/zen-garden/server/server.js;
-          timeout 300 node $$S;
+          timeout 300 node /site/server/server.js;
           sleep 2;
         done
       "
