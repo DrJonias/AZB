@@ -26,4 +26,12 @@ input:focus{border-color:rgba(255,211,107,.75);box-shadow:0 0 0 4px rgba(255,211
 .info-panel li{margin-bottom:8px;line-height:1.6}
 .info-panel .note{margin-top:12px;color:#8da3c8;font-size:14px}
 .card-link{display:inline-block;margin-top:0;margin-bottom:20px;padding:12px 14px;border-radius:999px}
-@media (max-width:720px){.stats-panel{grid-template-columns:1fr}.input-row{grid-template-columns:1fr}.app-header h1{font-size:28px}}
+@media (max-width:720px){
+  .stats-panel{grid-template-columns:1fr}
+  .input-row{grid-template-columns:1fr}
+  .app-header h1{font-size:26px}
+  .panel{padding:18px;border-radius:16px}
+  .stat-value{font-size:28px}
+  .time-row{font-size:14px}
+  .btn{padding:14px 0;width:100%}
+}

@@ -78,6 +78,7 @@ body {
 #canvas {
   display: block;
   cursor: none;
+  touch-action: none;
   transform-origin: center center;
 }
 
@@ -204,3 +205,15 @@ body {
 }
 
 .diff-btn.active span { color: rgba(255,211,107,0.7); }
+
+/* ── Mobile ── */
+@media (max-width: 560px) {
+  .back { top: 14px; left: 16px; font-size: 0.85rem; }
+  #hud { top: 12px; right: 16px; }
+  #timer { font-size: 22px; }
+  .overlay-box { padding: 24px 20px; max-height: 90vh; overflow-y: auto; }
+  .overlay-box h2 { font-size: 1.4rem; }
+  .diff-select { gap: 6px; }
+  .diff-btn { padding: 10px 2px; font-size: 12px; }
+  .overlay-actions .btn { flex: 1; justify-content: center; }
+}

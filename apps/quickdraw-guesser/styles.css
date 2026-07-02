@@ -34,6 +34,8 @@ body {
 
 .overlay-box {
   width: min(560px, calc(100% - 40px));
+  max-height: 90vh;
+  overflow-y: auto;
   padding: 32px;
   border-radius: 24px;
   background: rgba(15, 23, 36, 0.95);
@@ -142,6 +144,19 @@ body {
   }
 }
 
+@media (max-width: 560px) {
+  .wrapper { padding: 20px 16px 64px; }
+  .back { margin-bottom: 18px; }
+  .page-header { margin-bottom: 20px; }
+  .card { padding: 18px; border-radius: 20px; }
+  .canvas-wrap { gap: 14px; }
+  #canvas-container { max-width: 340px; }
+  .canvas-controls .btn { flex: 1; justify-content: center; }
+  .pen-btn { width: 46px; height: 46px; }
+  .overlay-box { padding: 26px 22px; }
+  .overlay-actions .btn { flex: 1; justify-content: center; }
+}
+
 .card {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -236,6 +251,7 @@ body {
   cursor: crosshair;
   display: block;
   background: #ffffff;
+  touch-action: none;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 

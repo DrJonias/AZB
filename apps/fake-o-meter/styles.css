@@ -211,7 +211,10 @@ body {
 .next-btn:active { transform: translateY(0); }
 
 @media (max-width: 520px) {
-  .game-wrap { padding: 60px 16px 32px; }
-  .quote-card { padding: 28px 24px; }
-  .choice-btn { padding: 15px 8px; font-size: 0.9rem; }
+  .game-wrap { padding: 64px 16px 32px; }
+  .quote-card { padding: 28px 22px; min-height: 150px; }
+  .quote-card::before { font-size: 4rem; top: 8px; left: 16px; }
+  .choice-btn { padding: 16px 8px; font-size: 0.95rem; }
+  .game-header { margin-bottom: 28px; }
+  .next-btn { width: 100%; justify-content: center; }
 }

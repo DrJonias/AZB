@@ -329,6 +329,20 @@ canvas.addEventListener('mouseleave', () => {
   mx=-999; my=-999;
 });
 
+// ── Touch ─────────────────────────────────────────────────────
+function touchMove(e) {
+  e.preventDefault();
+  const t=e.touches[0];
+  if (!t) return;
+  const r=canvas.getBoundingClientRect();
+  mx=(t.clientX-r.left)*(800/r.width);
+  my=(t.clientY-r.top)*(450/r.height);
+}
+canvas.addEventListener('touchstart', touchMove, { passive:false });
+canvas.addEventListener('touchmove',  touchMove, { passive:false });
+// Lifting the finger keeps the last position so it doesn't count as leaving the track.
+canvas.addEventListener('touchend', e => { e.preventDefault(); }, { passive:false });
+
 // ── Init ──────────────────────────────────────────────────────
 applyDifficulty('medium');
 buildTrack();

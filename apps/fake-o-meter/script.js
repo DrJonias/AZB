@@ -293,4 +293,9 @@ function guess(userSaysReal) {
   resultArea.classList.remove('hidden');
 }
 
+// Wire controls via addEventListener (CSP-safe, unlike inline onclick).
+document.getElementById('realBtn').addEventListener('click', () => guess(true));
+document.getElementById('fakeBtn').addEventListener('click', () => guess(false));
+document.getElementById('nextBtn').addEventListener('click', nextQuote);
+
 nextQuote();

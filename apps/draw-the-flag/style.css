@@ -214,6 +214,23 @@ canvas {
   display: block;
 }
 
+/* ── Mobile ── */
+@media (max-width: 560px) {
+  .wrapper { padding: 20px 14px 40px; }
+  .back { margin-bottom: 18px; }
+  .page-header { margin-bottom: 22px; }
+  .page-header h1 { font-size: 24px; }
+  .country-name { font-size: 30px; min-height: 40px; margin-bottom: 16px; }
+
+  /* larger touch targets */
+  .swatch { width: 30px; height: 30px; }
+  #colorPicker { width: 30px; height: 30px; }
+  .tools { gap: 10px; }
+  .tool-btn { padding: 8px 14px; font-size: 14px; }
+  .btn { padding: 12px 20px; font-size: 15px; flex: 1; }
+  .actions { gap: 10px; }
+}
+
 /* ── Utility ── */
 .hidden { display: none !important; }
 

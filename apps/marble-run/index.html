@@ -30,6 +30,8 @@
       <div class="palette" id="palette"></div>
       <div class="tool-sep"></div>
       <div class="mr-controls">
+        <button class="btn-rotate"       id="rotateLeftBtn"  title="Rotate left">↺</button>
+        <button class="btn-rotate"       id="rotateRightBtn" title="Rotate right">↻</button>
         <button class="btn-start"        id="startBtn">▶ Start</button>
         <button class="btn-reset-ball"   id="resetBallBtn"   disabled>↺ Ball</button>
         <button class="btn-reset-canvas" id="resetCanvasBtn">🗑 Canvas</button>
@@ -41,7 +43,10 @@
       <canvas id="marble-canvas" width="900" height="560"></canvas>
     </div>
 
-    <p class="mr-hint">Klicken: platzieren &nbsp;·&nbsp; Ziehen: verschieben &nbsp;·&nbsp; Scroll: rotieren &nbsp;·&nbsp; Rechtsklick: löschen</p>
+    <p class="mr-hint">
+      <span class="hint-desktop">Klicken: platzieren &nbsp;·&nbsp; Ziehen: verschieben &nbsp;·&nbsp; Scroll / ↺↻: rotieren &nbsp;·&nbsp; Rechtsklick: löschen &nbsp;·&nbsp; 📌 Nagel auf Objekt: dort fixieren (1 Nagel = schwingt)</span>
+      <span class="hint-touch">Tippen: platzieren &nbsp;·&nbsp; Ziehen: verschieben &nbsp;·&nbsp; ↺↻: rotieren &nbsp;·&nbsp; Doppeltippen: löschen &nbsp;·&nbsp; 📌 Nagel auf Objekt: dort fixieren</span>
+    </p>
 
   </div>
 

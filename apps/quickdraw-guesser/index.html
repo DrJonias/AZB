@@ -10,7 +10,7 @@
   <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
 </head>
 <body>
-  <canvas class="confetti-canvas" id="confettiCanvas"></canvas>
+  <!-- <canvas class="confetti-canvas" id="confettiCanvas"></canvas> -->
 
   <div class="overlay" id="startScreen">
     <div class="overlay-box">
@@ -19,14 +19,14 @@
       <p>You get a word — draw it as quickly as possible!<br>The AI will try to guess what you are drawing.</p>
       <div class="model-status">
         <span class="status-dot loading" id="statusDot"></span>
-        <span id="statusText">Loading model…</span>
+        <span id="statusText">Loading AI model…</span>
       </div>
       <div class="overlay-actions">
         <a class="btn btn-outline" href="../../index.html">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           Back
         </a>
-        <button class="btn btn-accent" id="startBtn" disabled onclick="startGame()">Start game</button>
+        <button class="btn btn-accent" id="startBtn">Start game</button>
       </div>
     </div>
   </div>
@@ -43,7 +43,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           Back
         </a>
-        <button class="btn btn-primary" onclick="nextRound()">Next round</button>
+        <button class="btn btn-primary" id="nextRoundBtn">Next round</button>
       </div>
     </div>
   </div>
@@ -69,17 +69,17 @@
 
         <div class="pen-label">Brush size</div>
         <div class="pen-sizes">
-          <button class="pen-btn active" data-size="1" onclick="setPen(this)"><span class="pen-dot" style="width:4px;height:4px"></span></button>
-          <button class="pen-btn" data-size="2" onclick="setPen(this)"><span class="pen-dot" style="width:8px;height:8px"></span></button>
-          <button class="pen-btn" data-size="3" onclick="setPen(this)"><span class="pen-dot" style="width:13px;height:13px"></span></button>
+          <button class="pen-btn active" data-size="1"><span class="pen-dot" style="width:4px;height:4px"></span></button>
+          <button class="pen-btn" data-size="2"><span class="pen-dot" style="width:8px;height:8px"></span></button>
+          <button class="pen-btn" data-size="3"><span class="pen-dot" style="width:13px;height:13px"></span></button>
         </div>
       </div>
 
       <div class="canvas-wrap">
         <div id="canvas-container"></div>
         <div class="canvas-controls">
-          <button class="btn btn-outline" onclick="clearDrawing()">✕ Clear</button>
-          <button class="btn btn-outline" onclick="skipWord()">→ Skip</button>
+          <button class="btn btn-outline" id="clearBtn">✕ Clear</button>
+          <button class="btn btn-outline" id="skipBtn">→ Skip</button>
         </div>
         <div class="round-info">Round <span id="roundNum">1</span></div>
       </div>

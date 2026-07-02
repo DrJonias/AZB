@@ -12,7 +12,7 @@ html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;back
 .site{max-width:980px;margin:48px auto;padding:24px}
 .hero{ text-align:center;padding:48px 12px 24px}
 .brand{font-weight:700;color:var(--accent);letter-spacing:.14em;text-transform:uppercase}
-.title{font-size:42px;margin:12px 0 6px}
+.title{font-size:clamp(28px,7vw,42px);margin:12px 0 6px}
 .subtitle{color:var(--muted);max-width:720px;margin:0 auto}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--gap);margin-top:34px}
 .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:var(--radius);padding:22px;display:block;text-decoration:none;color:inherit;border:1px solid var(--glass);backdrop-filter:blur(6px);transition:transform .14s ease,box-shadow .14s ease}
@@ -23,4 +23,13 @@ html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;back
 .foot{text-align:center;color:var(--muted);margin:44px 0 12px}
 
 /* responsive */
-@media (max-width:520px){.title{font-size:28px}.site{margin:20px;padding:16px}}
+@media (max-width:640px){
+  .site{margin:16px auto;padding:16px}
+  .hero{padding:24px 4px 12px}
+  .grid{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-top:24px}
+  .card{padding:18px}
+  .foot{margin:32px 0 12px}
+}
+@media (max-width:380px){
+  .grid{grid-template-columns:1fr}
+}

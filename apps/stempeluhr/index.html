@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Stempeluhr — Playground</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="wrapper">
+    <a class="back" href="../../index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Zurück
+    </a>
+
+    <header class="page-header">
+      <span class="page-icon">⏱️</span>
+      <h1>Stempeluhr</h1>
+      <p class="subtitle">Einstempeln, Feierabend im Blick — Überstunden automatisch berechnet.</p>
+    </header>
+
+    <div class="clock-layout">
+
+      <section class="panel input-panel">
+        <h2>Heute</h2>
+
+        <div class="field">
+          <label for="clockIn">Eingestempelt um</label>
+          <div class="time-input-row">
+            <input type="time" id="clockIn">
+            <button class="btn btn-now" id="stampInBtn" title="Jetzt einstempeln">Jetzt</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="clockOut">Ausgestempelt um <span class="optional">(optional)</span></label>
+          <div class="time-input-row">
+            <input type="time" id="clockOut">
+            <button class="btn btn-now" id="stampOutBtn" title="Jetzt ausstempeln">Jetzt</button>
+            <button class="btn btn-clear" id="clearOutBtn" title="Ausstempelzeit löschen">✕</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="breakMin">Pause (Min.)</label>
+            <input type="number" id="breakMin" min="0" max="240" step="5" value="30">
+          </div>
+          <div class="field">
+            <label for="weekHours">Wochenstunden</label>
+            <input type="number" id="weekHours" min="1" max="60" step="0.5" value="42">
+          </div>
+        </div>
+
+        <p class="target-note">Tagessoll: <strong id="dailyTarget">8:24</strong> h (Woche ÷ 5)</p>
+      </section>
+
+      <section class="panel result-panel">
+        <div class="result-block" id="resultEmpty">
+          <div class="big-icon">🕗</div>
+          <p>Stemple dich ein, um deine Feierabendzeit zu sehen.</p>
+        </div>
+
+        <div class="result-block hidden" id="resultEnd">
+          <div class="result-label">Feierabend um</div>
+          <div class="big-time" id="endTime">–</div>
+          <div class="countdown" id="countdown"></div>
+          <div class="progress-wrap">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <div class="progress-caption" id="progressCaption"></div>
+        </div>
+
+        <div class="result-block hidden" id="resultOvertime">
+          <div class="result-label">Arbeitszeit heute</div>
+          <div class="worked-time" id="workedTime">–</div>
+          <div class="result-label">Überstunden</div>
+          <div class="big-time" id="overtime">–</div>
+          <p class="overtime-note" id="overtimeNote"></p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <footer>made with ♥ — <a href="../../index.html">Playground</a></footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

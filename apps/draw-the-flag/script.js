@@ -95,6 +95,12 @@ document.getElementById("colorPicker").addEventListener("input", e => {
   setColor(e.target.value);
 });
 
+// Wire controls via addEventListener (CSP-safe, unlike inline onclick).
+document.getElementById("eraserBtn").addEventListener("click", toggleEraser);
+document.getElementById("clearBtn").addEventListener("click", clearCanvas);
+document.getElementById("revealBtn").addEventListener("click", revealFlag);
+document.getElementById("nextBtn").addEventListener("click", nextCountry);
+
 // --- Canvas drawing ---
 canvas.addEventListener("mousedown",  onDown);
 canvas.addEventListener("mousemove",  onMove);

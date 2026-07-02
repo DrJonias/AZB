@@ -93,21 +93,26 @@ function initSketch() {
     p.mouseDragged = () => { if (!isDrawing || won) return; paintLine(p.pmouseX, p.pmouseY, p.mouseX, p.mouseY); };
     p.mouseReleased = () => endStroke();
 
-    p.touchStarted = () => {
-      if (!inBounds()) return false;
+    // p5 maps single touches onto mouseX/mouseY (CSS scaling included), so the
+    // touch handlers mirror the mouse ones. p5 fires these for touches anywhere
+    // on the page — only claim (preventDefault) touches that actually start on
+    // the canvas, otherwise buttons and scrolling break on mobile.
+    p.touchStarted = (e) => {
+      if (!e || e.target !== p.canvas || !inBounds()) return true;
       beginStroke(); paintCell(p.mouseX, p.mouseY);
       return false;
     };
     p.touchMoved = () => {
-      if (!isDrawing || won) return false;
-      const t = p.touches[0];
-      const r = p.canvas.getBoundingClientRect();
-      const x = (t.clientX - r.left) * (p.width / r.width);
-      const y = (t.clientY - r.top) * (p.height / r.height);
-      paintLine(p.pmouseX, p.pmouseY, x, y);
+      if (!isDrawing) return true;
+      if (won) return false;
+      paintLine(p.pmouseX, p.pmouseY, p.mouseX, p.mouseY);
       return false;
     };
-    p.touchEnded = () => { endStroke(); return false; };
+    p.touchEnded = () => {
+      if (!isDrawing) return true;
+      endStroke();
+      return false;
+    };
   });
 }
 
@@ -128,7 +133,10 @@ async function initClassifier() {
     document.getElementById('statusText').textContent = 'AI ready!';
     document.getElementById('startBtn').disabled = false;
   } catch (err) {
-    document.getElementById('statusText').textContent = 'Load error — refresh the page';
+    // Model failed to load (offline / blocked CDN). The game stays playable;
+    // the AI simply won't guess until the model is available.
+    document.getElementById('statusDot').className = 'status-dot loading';
+    document.getElementById('statusText').textContent = 'AI unavailable — you can still draw';
     console.error('DoodleNet load error:', err);
   }
 }
@@ -232,6 +240,18 @@ function setPen(el) {
   document.querySelectorAll('.pen-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
 }
+
+// Wire all controls via addEventListener (works under strict CSP, unlike inline onclick).
+function wireControls() {
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('nextRoundBtn').addEventListener('click', nextRound);
+  document.getElementById('clearBtn').addEventListener('click', clearDrawing);
+  document.getElementById('skipBtn').addEventListener('click', skipWord);
+  document.querySelectorAll('.pen-btn').forEach(btn => {
+    btn.addEventListener('click', () => setPen(btn));
+  });
+}
+wireControls();
 
 function triggerWin() {
   if (won) return;

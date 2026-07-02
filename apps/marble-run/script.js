@@ -1,5 +1,5 @@
 /* globals Matter */
-const { Engine, Render, Runner, World, Bodies, Body, Events, Query } = Matter;
+const { Engine, Render, Runner, World, Bodies, Body, Events, Query, Constraint } = Matter;
 
 const CW = 900, CH = 560, WALL_T = 40;
 const MARBLE_R = 14, TRAIL_MAX = 35;
@@ -151,7 +151,8 @@ const TOOLS = [
   },
 
   {
-    // Static peg, no gravity — fixed support point
+    // Static peg, no gravity — fixed support point. Dropped onto an object it
+    // pins the object to that spot (one nail = revolute joint, it can swing).
     id: 'nagel', label: 'Nagel', icon: '📌', color: '#d0dae8',
     create(p) {
       return Bodies.circle(p.x, p.y, 6, {
@@ -179,6 +180,8 @@ let frameTick = 0;
 
 let dragBody = null, dragOffX = 0, dragOffY = 0;
 let isDragging = false, dragWasDynamic = false;
+let lastTouchedBody = null;   // most recently grabbed body, target for rotate buttons
+let nailPins = [];            // { nail, body, constraint } — nails pinned onto objects
 
 const BASE_GRAVITY = 1.3;
 
@@ -219,6 +222,19 @@ function init() {
   document.getElementById('resetBallBtn').onclick   = resetBall;
   document.getElementById('resetCanvasBtn').onclick = resetCanvas;
   document.getElementById('freezeBtn').onclick      = toggleFreeze;
+  document.getElementById('rotateLeftBtn').onclick  = () => rotateSelection(-1);
+  document.getElementById('rotateRightBtn').onclick = () => rotateSelection(1);
+}
+
+// Rotate the placement ghost (when a tool is selected) or the last-grabbed body.
+function rotateSelection(dir) {
+  const step = dir * 0.2;
+  if (selectedTool) {
+    placementAngle = (placementAngle + step) % (Math.PI * 2);
+  } else if (lastTouchedBody && placedBodies.includes(lastTouchedBody)) {
+    Body.setAngle(lastTouchedBody, lastTouchedBody.angle + step);
+    Body.setAngularVelocity(lastTouchedBody, 0);
+  }
 }
 
 // ── Marble ────────────────────────────────────────────────────────
@@ -256,8 +272,11 @@ function resetBall() {
 
 function resetCanvas() {
   resetBall();
+  nailPins.forEach(pin => World.remove(engine.world, pin.constraint));
+  nailPins = [];
   placedBodies.forEach(b => World.remove(engine.world, b));
   placedBodies = [];
+  lastTouchedBody = null;
 }
 
 function toggleFreeze() {
@@ -493,6 +512,7 @@ function setupEvents(canvas) {
       Body.setPosition(dragBody, { x: mousePos.x - dragOffX, y: mousePos.y - dragOffY });
       Body.setVelocity(dragBody, { x: 0, y: 0 });
       Body.setAngularVelocity(dragBody, 0);
+      if (dragBody.label === 'nagel') syncPinsToNail(dragBody);
     }
     canvas.style.cursor = selectedTool ? 'crosshair'
       : isDragging ? 'grabbing'
@@ -508,6 +528,7 @@ function setupEvents(canvas) {
     const hit = Query.point(placedBodies, p);
     if (hit.length) {
       dragBody = hit[0];
+      lastTouchedBody = dragBody;
       dragWasDynamic = !dragBody.isStatic;
       if (dragWasDynamic) Body.setStatic(dragBody, true);
       dragOffX = p.x - dragBody.position.x;
@@ -538,11 +559,70 @@ function setupEvents(canvas) {
     e.preventDefault();
     const p = canvasPos(e);
     const hit = Query.point(placedBodies, p);
-    if (hit.length) {
-      World.remove(engine.world, hit[0]);
-      placedBodies = placedBodies.filter(b => b !== hit[0]);
-    }
+    if (hit.length) removePlaced(hit[0]);
   });
+
+  // ── Touch: place / drag / double-tap-to-delete ──
+  let touchDragging = false, lastTapTime = 0, lastTapBody = null;
+
+  function touchPoint(t) {
+    const r = canvas.getBoundingClientRect();
+    return {
+      x: (t.clientX - r.left) * (CW / r.width),
+      y: (t.clientY - r.top)  * (CH / r.height),
+    };
+  }
+
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const t = e.touches[0];
+    if (!t) return;
+    const p = touchPoint(t);
+    mousePos = p;
+
+    if (selectedTool) { placeElement(selectedTool, p); return; }
+
+    const hit = Query.point(placedBodies, p);
+    if (!hit.length) return;
+
+    const body = hit[0];
+    const now = Date.now();
+    if (body === lastTapBody && now - lastTapTime < 320) {
+      // Double-tap → delete
+      removePlaced(body);
+      lastTapBody = null; lastTapTime = 0;
+      return;
+    }
+    lastTapBody = body; lastTapTime = now;
+    lastTouchedBody = body;
+
+    dragBody = body;
+    dragWasDynamic = !dragBody.isStatic;
+    if (dragWasDynamic) Body.setStatic(dragBody, true);
+    dragOffX = p.x - dragBody.position.x;
+    dragOffY = p.y - dragBody.position.y;
+    isDragging = true;
+    touchDragging = true;
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    const t = e.touches[0];
+    if (!t) return;
+    const p = touchPoint(t);
+    mousePos = p;
+    if (touchDragging && dragBody) {
+      Body.setPosition(dragBody, { x: p.x - dragOffX, y: p.y - dragOffY });
+      Body.setVelocity(dragBody, { x: 0, y: 0 });
+      Body.setAngularVelocity(dragBody, 0);
+      if (dragBody.label === 'nagel') syncPinsToNail(dragBody);
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', e => {
+    e.preventDefault();
+    if (touchDragging) { releaseDrag(); touchDragging = false; }
+  }, { passive: false });
 }
 
 function releaseDrag() {
@@ -569,6 +649,53 @@ function placeElement(toolId, p) {
   const body = tool.create(p, placementAngle);
   World.add(engine.world, body);
   placedBodies.push(body);
+  if (toolId === 'nagel') pinBodyAt(body, p);
+}
+
+// A nail dropped onto a dynamic object pins the object to that world point.
+// One nail acts as a revolute joint (the object can still swing around it),
+// a second nail on the same object fixes it completely.
+function pinBodyAt(nail, p) {
+  const dynamic = placedBodies.filter(b => !b.isStatic && b !== nail);
+  const target = Query.point(dynamic, p)[0];
+  if (!target) return;
+
+  // Anchor in target-local coordinates so it rotates along with the body
+  const dx = p.x - target.position.x;
+  const dy = p.y - target.position.y;
+  const cos = Math.cos(-target.angle), sin = Math.sin(-target.angle);
+  const constraint = Constraint.create({
+    pointA: { x: p.x, y: p.y },
+    bodyB: target,
+    pointB: { x: dx * cos - dy * sin, y: dx * sin + dy * cos },
+    length: 0, stiffness: 0.9, damping: 0.05,
+    render: { visible: false },
+  });
+  World.add(engine.world, constraint);
+
+  // The pinned nail is just an anchor — it must not collide with the
+  // board it holds (or the marble), otherwise everything jitters.
+  nail.isSensor = true;
+  nailPins.push({ nail, body: target, constraint });
+}
+
+// Remove a placed body plus any pin constraints referencing it.
+function removePlaced(body) {
+  nailPins = nailPins.filter(pin => {
+    if (pin.nail !== body && pin.body !== body) return true;
+    World.remove(engine.world, pin.constraint);
+    return false;
+  });
+  World.remove(engine.world, body);
+  placedBodies = placedBodies.filter(b => b !== body);
+  if (lastTouchedBody === body) lastTouchedBody = null;
+}
+
+// Keep pin anchors in sync while their nail is being dragged around.
+function syncPinsToNail(nail) {
+  nailPins.forEach(pin => {
+    if (pin.nail === nail) pin.constraint.pointA = { x: nail.position.x, y: nail.position.y };
+  });
 }
 
 // ── Palette ───────────────────────────────────────────────────────

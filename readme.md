@@ -15,10 +15,11 @@ Lightweight collection of mini games with a playful single-page homepage. Built 
 - `apps/speedrun`
 - `apps/quickdraw-guesser`
 - `apps/fake-o-meter`
-
+- `apps/draw-the-flag`
+- `apps/marble-run`
+- `apps/stempeluhr` – Clock-In/Clock-Out mit 42h-Woche (8:24 h/Tag), Feierabendzeit & Überstunden
+- `apps/zen-garden` – Multiplayer-Clicker mit Node.js-Backend (siehe `apps/zen-garden/readme.md`)
 
 ## ToDo
 
-- Mobile view
-- Clock-In / Clock-Out
-- Nail concept marble game
+_Aktuell keine offenen ToDos._
