@@ -12,7 +12,8 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 8787;
-const DATA_FILE = path.join(__dirname, 'garden-data.json');
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const DATA_FILE = path.join(DATA_DIR, 'garden-data.json');
 const APP_DIR = path.resolve(__dirname, '..');
 
 const PLOT_COUNT = 20;
@@ -46,6 +47,7 @@ let dirty = false;
 const ipLast = new Map();
 
 function loadGarden() {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
   try {
     const saved = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     garden = { ...garden, ...saved };
@@ -63,7 +65,10 @@ function saveGarden() {
   });
 }
 setInterval(saveGarden, 10 * 1000);
-process.on('SIGINT', () => { dirty = true; try { fs.writeFileSync(DATA_FILE, JSON.stringify(garden, null, 2)); } catch {} process.exit(0); });
+// SIGTERM is what Docker sends on stop/restart; SIGINT covers Ctrl+C.
+function shutdown() { try { fs.writeFileSync(DATA_FILE, JSON.stringify(garden, null, 2)); } catch {} process.exit(0); }
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 // ── Game logic ────────────────────────────────────────────────────
 function speciesById(id) { return SPECIES.find(s => s.id === id); }
