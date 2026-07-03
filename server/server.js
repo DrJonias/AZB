@@ -20,7 +20,7 @@ const APP_DIR = path.resolve(__dirname, '..');
 
 const PLOT_COUNT = 24;   // divisible by 6/4/3 → the grid always shows full rows
 const COOLDOWN_MS = 60 * 1000;       // 1 action per player per minute
-const IP_THROTTLE_MS = 1500;         // basic request throttle per IP
+const IP_THROTTLE_MS = 1000;         // basic request throttle per IP — matches Hanami's 1s floor below
 const LOG_MAX = 15;
 
 // Anonymous site feedback — appended as JSON lines, one entry per line.
@@ -100,7 +100,7 @@ const BOOSTS = {
   ahorn:  { name: 'Herbstwind',    emoji: '🍁', type: 'duration',   value: 2,     desc: 'Neu aktivierte Boosts halten 2 h statt 1 h' },
   bonsai: { name: 'Erleuchtung',   emoji: '🌳', type: 'unlock',     value: 2,     desc: 'Klicks zählen doppelt für Freischaltungen' },
   lotus:  { name: 'Monsun',        emoji: '🪷', type: 'rain',       value: 1,     desc: 'Alle Pflanzen wachsen +1 pro Minute' },
-  sakura: { name: 'Hanami',        emoji: '🌸', type: 'cooldown',   value: 0,     desc: 'Kein Cooldown!' },
+  sakura: { name: 'Hanami',        emoji: '🌸', type: 'cooldown',   value: 1000,  desc: 'Cooldown nur 1 Sekunde' },
 };
 
 // ── State ─────────────────────────────────────────────────────────

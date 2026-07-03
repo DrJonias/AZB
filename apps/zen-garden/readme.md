@@ -34,4 +34,4 @@ stapeln sich frei, beim gleichen Typ gilt der stärkste.
 | 🍁 Fächerahorn | Herbstwind | Neu aktivierte Boosts halten 2 h statt 1 h |
 | 🌳 Bonsai | Erleuchtung | Klicks zählen doppelt für Freischaltungen |
 | 🪷 Lotus | Monsun | Alle Pflanzen wachsen +1 pro Minute |
-| 🌸 Kirschblüte | Hanami | Kein Cooldown! |
+| 🌸 Kirschblüte | Hanami | Cooldown nur 1 Sekunde |
