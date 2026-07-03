@@ -163,12 +163,12 @@
     // Boost
     panel.appendChild(head('Boost'));
     refs.boostSpecies = el('select', C.input + ';flex:1');
-    refs.boostMin = el('input', C.input + ';width:70px', { type: 'number', min: 0, value: 60, title: 'Minutes' });
-    const boostOn = el('button', C.btn, { textContent: 'On' });
-    boostOn.addEventListener('click', () => run({ cmd: 'boost', species: refs.boostSpecies.value, value: +refs.boostMin.value }));
+    refs.boostLevel = el('input', C.input + ';width:70px', { type: 'number', min: 0, value: 1, title: 'Level' });
+    const boostSet = el('button', C.btn, { textContent: 'Set' });
+    boostSet.addEventListener('click', () => run({ cmd: 'boost', species: refs.boostSpecies.value, value: +refs.boostLevel.value }));
     const boostOff = el('button', C.btn, { textContent: 'Off' });
     boostOff.addEventListener('click', () => run({ cmd: 'boost', species: refs.boostSpecies.value, value: 0 }));
-    panel.appendChild(row(refs.boostSpecies, refs.boostMin, boostOn, boostOff));
+    panel.appendChild(row(refs.boostSpecies, refs.boostLevel, boostSet, boostOff));
 
     // Players
     panel.appendChild(head('Players'));

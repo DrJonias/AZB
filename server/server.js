@@ -87,21 +87,27 @@ const SPECIES = [
 ];
 
 // Every species has its own global boost: harvesting a fully grown plant
-// activates it FOR EVERYONE. Base duration 1 h; harvesting the same species
-// again extends it (capped 12 h ahead). Different types combine freely,
-// within the same type the strongest active boost wins.
-const BOOST_BASE_MS = 60 * 60 * 1000;
-const BOOST_CAP_MS = 12 * 60 * 60 * 1000;
+// raises that boost's level FOR EVERYONE — permanently. Different types
+// combine freely. Fresh Moss and Autumn Wind scale with their level (up to
+// maxLevel); for the other boosts the level is a community prestige counter.
+const MIN_COOLDOWN_MS = 10 * 1000;   // Fresh Moss floor — it never gets faster than this
 const BOOSTS = {
-  moos:   { name: 'Fresh Moss',    emoji: '🍀', type: 'cooldown',   value: 40000, desc: 'Cooldown only 40 s instead of 60 s' },
-  gras:   { name: 'Pampas Power',  emoji: '🌾', type: 'multiplier', value: 2,     desc: 'Watering counts double (+2 growth)' },
-  bambus: { name: 'Sprinkler',     emoji: '🎍', type: 'splash',     value: 1,     desc: 'Watering also hits one random plant' },
-  blume:  { name: 'Lucky Bloom',   emoji: '🌼', type: 'lucky',      value: 0.25,  desc: '25 % chance: click without cooldown' },
-  ahorn:  { name: 'Autumn Wind',   emoji: '🍁', type: 'duration',   value: 2,     desc: 'Newly activated boosts last 2 h instead of 1 h' },
-  bonsai: { name: 'Enlightenment', emoji: '🌳', type: 'unlock',     value: 2,     desc: 'Clicks count double towards unlocks' },
-  lotus:  { name: 'Monsoon',       emoji: '🪷', type: 'rain',       value: 1,     desc: 'All plants grow +1 per minute' },
-  sakura: { name: 'Hanami',        emoji: '🌸', type: 'cooldown',   value: 1000,  desc: 'Cooldown only 1 second' },
+  moos:   { name: 'Fresh Moss',    emoji: '🍀', type: 'cooldownStep', value: 1000, maxLevel: 50, desc: '−1 s cooldown per level (10 s at level 50)' },
+  gras:   { name: 'Pampas Power',  emoji: '🌾', type: 'multiplier',   value: 2,    desc: 'Watering counts double (+2 growth)' },
+  bambus: { name: 'Sprinkler',     emoji: '🎍', type: 'splash',       value: 1,    desc: 'Watering also hits one random plant' },
+  blume:  { name: 'Lucky Bloom',   emoji: '🌼', type: 'lucky',        value: 0.25, desc: '25 % chance: click without cooldown' },
+  ahorn:  { name: 'Autumn Wind',   emoji: '🍁', type: 'reseed',       value: 0.02, maxLevel: 25, desc: '+2 % chance per level that a harvested plant re-seeds itself (50 % at level 25)' },
+  bonsai: { name: 'Enlightenment', emoji: '🌳', type: 'unlock',       value: 2,    desc: 'Clicks count double towards unlocks' },
+  lotus:  { name: 'Monsoon',       emoji: '🪷', type: 'rain',         value: 1,    desc: 'All plants grow +1 per minute' },
+  sakura: { name: 'Hanami',        emoji: '🌸', type: 'cooldown',     value: 1000, desc: 'Cooldown only 1 second' },
 };
+
+// Effective level: stored level clamped to the boost's cap (if any).
+function boostLevel(id) {
+  const lvl = (garden.boosts || {})[id] || 0;
+  const max = BOOSTS[id] && BOOSTS[id].maxLevel;
+  return max ? Math.min(lvl, max) : lvl;
+}
 
 // ── State ─────────────────────────────────────────────────────────
 let garden = {
@@ -110,7 +116,7 @@ let garden = {
   harvestedTotal: 0,
   players: {},                           // name → { clicks, harvests, lastAction }
   log: [],                               // newest first
-  boosts: {},                            // speciesId → expiry timestamp (global!)
+  boosts: {},                            // speciesId → boost level (permanent, global!)
 };
 let dirty = false;
 const ipLast = new Map();
@@ -121,6 +127,15 @@ function loadGarden() {
     const saved = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     garden = { ...garden, ...saved };
     while (garden.plots.length < PLOT_COUNT) garden.plots.push(null);
+    // Migrate pre-permanent boosts, which stored expiry timestamps instead of
+    // levels: a still-active boost becomes level 1, expired ones are dropped.
+    for (const [id, v] of Object.entries(garden.boosts || {})) {
+      if (!BOOSTS[id]) delete garden.boosts[id];
+      else if (v > 1e12) {
+        if (v > Date.now()) garden.boosts[id] = 1;
+        else delete garden.boosts[id];
+      }
+    }
   } catch {
     /* first start — empty garden */
   }
@@ -160,18 +175,19 @@ function addLog(entry) {
   garden.log = garden.log.slice(0, LOG_MAX);
 }
 
-// Combined effect of all currently active boosts.
-function boostEffects(now = Date.now()) {
-  const eff = { cooldown: COOLDOWN_MS, mult: 1, splash: false, lucky: 0, durationX: 1, rain: false, unlockX: 1 };
-  for (const [id, until] of Object.entries(garden.boosts || {})) {
-    if (until <= now) continue;
+// Combined effect of all boosts (permanent, level-based per species).
+function boostEffects() {
+  const eff = { cooldown: COOLDOWN_MS, mult: 1, splash: false, lucky: 0, rain: false, unlockX: 1, reseed: 0 };
+  for (const id of Object.keys(garden.boosts || {})) {
     const b = BOOSTS[id];
-    if (!b) continue;
-    if (b.type === 'cooldown')        eff.cooldown = Math.min(eff.cooldown, b.value);
+    const level = boostLevel(id);
+    if (!b || level < 1) continue;
+    if (b.type === 'cooldownStep')    eff.cooldown = Math.min(eff.cooldown, Math.max(MIN_COOLDOWN_MS, COOLDOWN_MS - level * b.value));
+    else if (b.type === 'cooldown')   eff.cooldown = Math.min(eff.cooldown, b.value);
     else if (b.type === 'multiplier') eff.mult = Math.max(eff.mult, b.value);
     else if (b.type === 'splash')     eff.splash = true;
     else if (b.type === 'lucky')      eff.lucky = Math.max(eff.lucky, b.value);
-    else if (b.type === 'duration')   eff.durationX = Math.max(eff.durationX, b.value);
+    else if (b.type === 'reseed')     eff.reseed = level * b.value;
     else if (b.type === 'rain')       eff.rain = true;
     else if (b.type === 'unlock')     eff.unlockX = Math.max(eff.unlockX, b.value);
   }
@@ -200,7 +216,7 @@ function waterRandomOther(exceptIdx, byPlayer) {
 
 function applyAction(player, action, plotIdx, speciesId) {
   const now = Date.now();
-  const eff = boostEffects(now);
+  const eff = boostEffects();
   const p = garden.players[player] || (garden.players[player] = { clicks: 0, harvests: 0, lastAction: 0 });
 
   const wait = p.lastAction + eff.cooldown - now;
@@ -231,11 +247,15 @@ function applyAction(player, action, plotIdx, speciesId) {
     garden.plots[plotIdx] = null;
     garden.harvestedTotal += 1;
     p.harvests += 1;
-    // Activate (or extend) this species' global boost for everyone
+    // Raise this species' permanent global boost by one level
     const boost = BOOSTS[sp.id];
-    const from = Math.max(garden.boosts[sp.id] || 0, now);
-    garden.boosts[sp.id] = Math.min(now + BOOST_CAP_MS, from + BOOST_BASE_MS * eff.durationX);
-    addLog({ player, text: `harvested ${sp.name} ${sp.emoji} — boost "${boost.name}" ${boost.emoji} for everyone!` });
+    garden.boosts[sp.id] = (garden.boosts[sp.id] || 0) + 1;
+    addLog({ player, text: `harvested ${sp.name} ${sp.emoji} — "${boost.name}" ${boost.emoji} is now level ${boostLevel(sp.id)}!` });
+    // Autumn Wind: chance that the harvested plant re-seeds itself right away
+    if (eff.reseed > 0 && Math.random() < eff.reseed) {
+      garden.plots[plotIdx] = { species: sp.id, growth: 0, plantedBy: '🍁 wind', plantedAt: now };
+      addLog({ player: '🍁', text: `the autumn wind re-seeded ${sp.name} ${sp.emoji}!` });
+    }
   } else {
     return { error: 'Unknown action.' };
   }
@@ -251,16 +271,16 @@ function applyAction(player, action, plotIdx, speciesId) {
 
 function stateFor(player) {
   const now = Date.now();
-  const eff = boostEffects(now);
+  const eff = boostEffects();
   const me = player && garden.players[player];
   const top = Object.entries(garden.players)
     .map(([name, v]) => ({ name, clicks: v.clicks, harvests: v.harvests }))
     .sort((a, b) => b.clicks - a.clicks)
     .slice(0, 10);
-  const activeBoosts = Object.entries(garden.boosts || {})
-    .filter(([id, until]) => until > now && BOOSTS[id])
-    .map(([id, until]) => ({ species: id, until, ...BOOSTS[id] }))
-    .sort((a, b) => a.until - b.until);
+  const activeBoosts = Object.keys(garden.boosts || {})
+    .filter(id => BOOSTS[id] && boostLevel(id) > 0)
+    .map(id => ({ species: id, ...BOOSTS[id], level: boostLevel(id), maxLevel: BOOSTS[id].maxLevel || null }))
+    .sort((a, b) => SPECIES.findIndex(s => s.id === a.species) - SPECIES.findIndex(s => s.id === b.species));
   return {
     species: SPECIES.map(s => ({ ...s, boost: BOOSTS[s.id] })),
     plots: garden.plots,
@@ -318,10 +338,10 @@ function applyCheat(b) {
     }
     case 'boost': {
       if (!BOOSTS[b.species]) return { error: `Unknown species "${b.species}".` };
-      const min = Math.round(Number(b.value) || 0);
-      if (min <= 0) { delete garden.boosts[b.species]; return { ok: `Boost ${b.species} deactivated` }; }
-      garden.boosts[b.species] = now + min * 60000;
-      return { ok: `Boost "${BOOSTS[b.species].name}" active for ${min} min` };
+      const level = Math.round(Number(b.value) || 0);
+      if (level <= 0) { delete garden.boosts[b.species]; return { ok: `Boost ${b.species} removed` }; }
+      garden.boosts[b.species] = level;
+      return { ok: `Boost "${BOOSTS[b.species].name}" set to level ${boostLevel(b.species)}` };
     }
     case 'cooldown': {
       const p = garden.players[b.player];
