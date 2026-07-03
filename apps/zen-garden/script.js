@@ -33,7 +33,7 @@ async function fetchState() {
 
 async function sendAction(action, plot, species) {
   if (Date.now() < nextActionAt) {
-    toast(`Noch ${Math.ceil((nextActionAt - Date.now()) / 1000)}s Geduld 🧘`);
+    toast(`Wait ${Math.ceil((nextActionAt - Date.now()) / 1000)}s 🧘`);
     return;
   }
   try {
@@ -43,7 +43,7 @@ async function sendAction(action, plot, species) {
       body: JSON.stringify({ player: playerName, action, plot, species }),
     });
     applyState(data);
-    if (data.lucky) toast('🌼 Glücksblüte — dein Klick war gratis, kein Cooldown!');
+    if (data.lucky) toast('🌼 Lucky Bloom — your click was free, no cooldown!');
   } catch (err) {
     if (err.data && err.data.plots) applyState(err.data);
     toast(err.message);
@@ -76,7 +76,7 @@ function render() {
     btn.className = 'plot';
     if (!plot) {
       btn.classList.add('empty');
-      btn.innerHTML = '<span class="plot-emoji">🪨</span><span class="plot-cap">pflanzen</span>';
+      btn.innerHTML = '<span class="plot-emoji">🪨</span><span class="plot-cap">plant</span>';
       btn.addEventListener('click', () => openPicker(i));
     } else {
       const sp = speciesById(plot.species);
@@ -85,9 +85,9 @@ function render() {
       btn.classList.toggle('done', done);
       btn.innerHTML =
         `<span class="plot-emoji">${stageEmoji(sp, plot.growth)}</span>` +
-        `<span class="plot-cap">${done ? 'ernten ✨' : sp.name}</span>` +
+        `<span class="plot-cap">${done ? 'harvest ✨' : sp.name}</span>` +
         `<span class="plot-bar"><span class="plot-fill" style="width:${pct}%"></span></span>`;
-      btn.title = `${sp.name} · ${plot.growth}/${sp.growth} · gepflanzt von ${plot.plantedBy}`;
+      btn.title = `${sp.name} · ${plot.growth}/${sp.growth} · planted by ${plot.plantedBy}`;
       btn.addEventListener('click', () => sendAction(done ? 'harvest' : 'water', i));
     }
     garden.appendChild(btn);
@@ -101,36 +101,36 @@ function render() {
     const row = document.createElement('div');
     row.className = 'species-row' + (unlocked ? '' : ' locked');
     const boostLine = unlocked && sp.boost
-      ? `<span class="sp-boost">Ernte-Boost „${esc(sp.boost.name)}": ${esc(sp.boost.desc)}</span>`
+      ? `<span class="sp-boost">Harvest boost “${esc(sp.boost.name)}”: ${esc(sp.boost.desc)}</span>`
       : '';
     row.innerHTML =
       `<span class="sp-emoji">${unlocked ? sp.emoji : '🔒'}</span>` +
       `<span class="sp-main"><span class="sp-name">${unlocked ? sp.name : '???'}</span>${boostLine}</span>` +
       `<span class="sp-info">${unlocked
-        ? `${sp.growth.toLocaleString('de-DE')} 💧`
-        : `ab ${sp.unlock.toLocaleString('de-DE')} Klicks`}</span>`;
+        ? `${sp.growth.toLocaleString('en-US')} 💧`
+        : `from ${sp.unlock.toLocaleString('en-US')} clicks`}</span>`;
     list.appendChild(row);
   });
 
   renderBoosts();
 
   // Community stats
-  $('statClicks').textContent = state.totalClicks.toLocaleString('de-DE');
-  $('statHarvest').textContent = state.harvestedTotal.toLocaleString('de-DE');
+  $('statClicks').textContent = state.totalClicks.toLocaleString('en-US');
+  $('statHarvest').textContent = state.harvestedTotal.toLocaleString('en-US');
 
   const next = state.species.find(sp => state.totalClicks < sp.unlock);
   $('unlockProgress').innerHTML = next
-    ? `Nächste Sorte bei <strong>${next.unlock.toLocaleString('de-DE')}</strong> Klicks ` +
+    ? `Next species at <strong>${next.unlock.toLocaleString('en-US')}</strong> clicks ` +
       `<span class="unlock-bar"><span style="width:${(state.totalClicks / next.unlock * 100).toFixed(1)}%"></span></span>`
-    : 'Alle Sorten freigeschaltet 🎉';
+    : 'All species unlocked 🎉';
 
   $('topList').innerHTML = state.top
-    .map(p => `<li><span>${esc(p.name)}</span><span>${p.clicks.toLocaleString('de-DE')} Klicks · ${p.harvests} 🙏</span></li>`)
-    .join('') || '<li>Noch niemand hier.</li>';
+    .map(p => `<li><span>${esc(p.name)}</span><span>${p.clicks.toLocaleString('en-US')} clicks · ${p.harvests} 🙏</span></li>`)
+    .join('') || '<li>No one here yet.</li>';
 
   $('logList').innerHTML = state.log
     .map(e => `<li><strong>${esc(e.player)}</strong> ${esc(e.text)}</li>`)
-    .join('') || '<li>Noch ganz still hier.</li>';
+    .join('') || '<li>Still quiet here.</li>';
 }
 
 function esc(s) {
@@ -171,11 +171,11 @@ setInterval(() => {
   if (left <= 0) {
     fill.style.width = '100%';
     fill.classList.add('ready');
-    text.textContent = 'bereit 🌊';
+    text.textContent = 'ready 🌊';
   } else {
     fill.classList.remove('ready');
     fill.style.width = `${(100 - left / state.cooldownMs * 100).toFixed(1)}%`;
-    text.textContent = `nächster Klick in ${Math.ceil(left / 1000)}s`;
+    text.textContent = `next click in ${Math.ceil(left / 1000)}s`;
   }
 }, 250);
 
@@ -191,7 +191,7 @@ function openPicker(plotIdx) {
   state.species.filter(sp => state.totalClicks >= sp.unlock).forEach(sp => {
     const btn = document.createElement('button');
     btn.className = 'picker-item';
-    btn.innerHTML = `<span>${sp.emoji}</span><span>${sp.name}</span><span class="sp-info">${sp.growth.toLocaleString('de-DE')} 💧</span>`;
+    btn.innerHTML = `<span>${sp.emoji}</span><span>${sp.name}</span><span class="sp-info">${sp.growth.toLocaleString('en-US')} 💧</span>`;
     btn.addEventListener('click', () => {
       const plot = pickerPlot;   // closePicker() nulls pickerPlot — grab it first
       closePicker();
@@ -226,7 +226,7 @@ function enterGarden(name) {
 
 $('nameBtn').addEventListener('click', () => {
   const name = $('nameInput').value.trim();
-  if (name.length < 2) { toast('Mindestens 2 Zeichen, bitte.'); return; }
+  if (name.length < 2) { toast('Please enter at least 2 characters.'); return; }
   enterGarden(name);
 });
 $('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('nameBtn').click(); });

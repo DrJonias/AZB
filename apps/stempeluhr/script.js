@@ -89,19 +89,19 @@ function update() {
     if (end < start) end += 1440; // over midnight
     const worked = Math.max(0, end - start - breakMin);
     const diff = worked - target;
-    els.workedTime.textContent = `${formatDuration(worked)} h (Pause: ${breakMin} Min.)`;
+    els.workedTime.textContent = `${formatDuration(worked)} h (Break: ${breakMin} min)`;
     els.overtime.textContent = `${diff < 0 ? '−' : '+'}${formatDuration(diff)} h`;
     els.overtime.className = 'big-time ' + (diff >= 0 ? 'positive' : 'negative');
     els.overtimeNote.textContent = diff >= 0
-      ? 'Soll erfüllt — schönen Feierabend! 🎉'
-      : `Es fehlen noch ${formatDuration(-diff)} h zum Tagessoll.`;
+      ? 'Target reached — enjoy the rest of your day! 🎉'
+      : `You need ${formatDuration(-diff)} h more to reach your daily target.`;
     show(els.resultOvertime);
     return;
   }
 
   // No clock-out yet → show projected end of day
   const endOfDay = start + target + breakMin;
-  els.endTime.textContent = `${formatClock(endOfDay)} Uhr`;
+  els.endTime.textContent = `${formatClock(endOfDay)} h`;
 
   const now = nowMinutes() + (nowMinutes() < start ? 1440 : 0);
   const remaining = endOfDay - now;
@@ -110,11 +110,11 @@ function update() {
   els.progressBar.classList.toggle('done', remaining <= 0);
 
   if (remaining > 0) {
-    els.countdown.textContent = `noch ${formatDuration(remaining)} h`;
-    els.progressCaption.textContent = `${Math.round(progress * 100)} % des Tages geschafft`;
+    els.countdown.textContent = `still ${formatDuration(remaining)} h left`;
+    els.progressCaption.textContent = `${Math.round(progress * 100)} % of the day completed`;
   } else {
-    els.countdown.textContent = `Feierabend! Bereits ${formatDuration(-remaining)} h Überstunden heute.`;
-    els.progressCaption.textContent = '100 % — Zeit zu gehen 🏃';
+    els.countdown.textContent = `Workday over! ${formatDuration(-remaining)} h overtime so far.`;
+    els.progressCaption.textContent = '100 % — time to go 🏃';
   }
   show(els.resultEnd);
 }

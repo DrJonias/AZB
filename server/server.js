@@ -76,14 +76,14 @@ function submitScore(game, name, score) {
 // Unlock = lifetime community clicks needed before the species can be planted.
 // Deliberately steep — the garden is meant to grow over months, not days.
 const SPECIES = [
-  { id: 'moos',   name: 'Moos',         emoji: '🍀', stages: ['🟤', '🌱', '🍀'],       growth: 30,    unlock: 0 },
-  { id: 'gras',   name: 'Pampasgras',   emoji: '🌾', stages: ['🟤', '🌱', '🌾'],       growth: 80,    unlock: 0 },
-  { id: 'bambus', name: 'Bambus',       emoji: '🎍', stages: ['🟤', '🌱', '🎋', '🎍'], growth: 250,   unlock: 300 },
-  { id: 'blume',  name: 'Chrysantheme', emoji: '🌼', stages: ['🟤', '🌱', '🌿', '🌼'], growth: 600,   unlock: 1500 },
-  { id: 'ahorn',  name: 'Fächerahorn',  emoji: '🍁', stages: ['🟤', '🌱', '🌿', '🍁'], growth: 1500,  unlock: 6000 },
-  { id: 'bonsai', name: 'Bonsai',       emoji: '🌳', stages: ['🟤', '🌱', '🪴', '🌳'], growth: 4000,  unlock: 25000 },
-  { id: 'lotus',  name: 'Lotus',        emoji: '🪷', stages: ['🟤', '🌱', '🌿', '🪷'], growth: 10000, unlock: 90000 },
-  { id: 'sakura', name: 'Kirschblüte',  emoji: '🌸', stages: ['🟤', '🌱', '🌳', '🌸'], growth: 25000, unlock: 300000 },
+  { id: 'moos',   name: 'Moss',           emoji: '🍀', stages: ['🟤', '🌱', '🍀'],       growth: 30,    unlock: 0 },
+  { id: 'gras',   name: 'Pampas Grass',   emoji: '🌾', stages: ['🟤', '🌱', '🌾'],       growth: 80,    unlock: 0 },
+  { id: 'bambus', name: 'Bamboo',         emoji: '🎍', stages: ['🟤', '🌱', '🎋', '🎍'], growth: 250,   unlock: 300 },
+  { id: 'blume',  name: 'Chrysanthemum',  emoji: '🌼', stages: ['🟤', '🌱', '🌿', '🌼'], growth: 600,   unlock: 1500 },
+  { id: 'ahorn',  name: 'Japanese Maple', emoji: '🍁', stages: ['🟤', '🌱', '🌿', '🍁'], growth: 1500,  unlock: 6000 },
+  { id: 'bonsai', name: 'Bonsai',         emoji: '🌳', stages: ['🟤', '🌱', '🪴', '🌳'], growth: 4000,  unlock: 25000 },
+  { id: 'lotus',  name: 'Lotus',          emoji: '🪷', stages: ['🟤', '🌱', '🌿', '🪷'], growth: 10000, unlock: 90000 },
+  { id: 'sakura', name: 'Cherry Blossom', emoji: '🌸', stages: ['🟤', '🌱', '🌳', '🌸'], growth: 25000, unlock: 300000 },
 ];
 
 // Every species has its own global boost: harvesting a fully grown plant
@@ -93,14 +93,14 @@ const SPECIES = [
 const BOOST_BASE_MS = 60 * 60 * 1000;
 const BOOST_CAP_MS = 12 * 60 * 60 * 1000;
 const BOOSTS = {
-  moos:   { name: 'Frisches Moos', emoji: '🍀', type: 'cooldown',   value: 40000, desc: 'Cooldown nur 40 s statt 60 s' },
-  gras:   { name: 'Pampas-Power',  emoji: '🌾', type: 'multiplier', value: 2,     desc: 'Gießen zählt doppelt (+2 Wachstum)' },
-  bambus: { name: 'Sprinkler',     emoji: '🎍', type: 'splash',     value: 1,     desc: 'Gießen bewässert zusätzlich eine zufällige Pflanze' },
-  blume:  { name: 'Glücksblüte',   emoji: '🌼', type: 'lucky',      value: 0.25,  desc: '25 % Chance: Klick ohne Cooldown' },
-  ahorn:  { name: 'Herbstwind',    emoji: '🍁', type: 'duration',   value: 2,     desc: 'Neu aktivierte Boosts halten 2 h statt 1 h' },
-  bonsai: { name: 'Erleuchtung',   emoji: '🌳', type: 'unlock',     value: 2,     desc: 'Klicks zählen doppelt für Freischaltungen' },
-  lotus:  { name: 'Monsun',        emoji: '🪷', type: 'rain',       value: 1,     desc: 'Alle Pflanzen wachsen +1 pro Minute' },
-  sakura: { name: 'Hanami',        emoji: '🌸', type: 'cooldown',   value: 1000,  desc: 'Cooldown nur 1 Sekunde' },
+  moos:   { name: 'Fresh Moss',    emoji: '🍀', type: 'cooldown',   value: 40000, desc: 'Cooldown only 40 s instead of 60 s' },
+  gras:   { name: 'Pampas Power',  emoji: '🌾', type: 'multiplier', value: 2,     desc: 'Watering counts double (+2 growth)' },
+  bambus: { name: 'Sprinkler',     emoji: '🎍', type: 'splash',     value: 1,     desc: 'Watering also hits one random plant' },
+  blume:  { name: 'Lucky Bloom',   emoji: '🌼', type: 'lucky',      value: 0.25,  desc: '25 % chance: click without cooldown' },
+  ahorn:  { name: 'Autumn Wind',   emoji: '🍁', type: 'duration',   value: 2,     desc: 'Newly activated boosts last 2 h instead of 1 h' },
+  bonsai: { name: 'Enlightenment', emoji: '🌳', type: 'unlock',     value: 2,     desc: 'Clicks count double towards unlocks' },
+  lotus:  { name: 'Monsoon',       emoji: '🪷', type: 'rain',       value: 1,     desc: 'All plants grow +1 per minute' },
+  sakura: { name: 'Hanami',        emoji: '🌸', type: 'cooldown',   value: 1000,  desc: 'Cooldown only 1 second' },
 };
 
 // ── State ─────────────────────────────────────────────────────────
@@ -184,7 +184,7 @@ function growPlot(plot, amount, byPlayer) {
   const before = plot.growth;
   plot.growth = Math.min(sp.growth, plot.growth + amount);
   if (before < sp.growth && plot.growth >= sp.growth) {
-    addLog({ player: byPlayer || '🌧️', text: `${sp.name} ${sp.emoji} ist voll erblüht! ✨` });
+    addLog({ player: byPlayer || '🌧️', text: `${sp.name} ${sp.emoji} is in full bloom! ✨` });
   }
 }
 
@@ -207,27 +207,27 @@ function applyAction(player, action, plotIdx, speciesId) {
   if (wait > 0) return { error: 'cooldown', wait };
 
   if (!Number.isInteger(plotIdx) || plotIdx < 0 || plotIdx >= garden.plots.length) {
-    return { error: 'Ungültiges Beet.' };
+    return { error: 'Invalid plot.' };
   }
   const plot = garden.plots[plotIdx];
 
   if (action === 'plant') {
-    if (plot) return { error: 'Das Beet ist schon bepflanzt.' };
+    if (plot) return { error: 'That plot is already planted.' };
     const sp = speciesById(speciesId);
-    if (!sp) return { error: 'Unbekannte Sorte.' };
-    if (garden.totalClicks < sp.unlock) return { error: 'Diese Sorte ist noch nicht freigeschaltet.' };
+    if (!sp) return { error: 'Unknown species.' };
+    if (garden.totalClicks < sp.unlock) return { error: 'This species is not unlocked yet.' };
     garden.plots[plotIdx] = { species: sp.id, growth: 0, plantedBy: player, plantedAt: now };
-    addLog({ player, text: `hat ${sp.name} ${sp.emoji} gepflanzt` });
+    addLog({ player, text: `planted ${sp.name} ${sp.emoji}` });
   } else if (action === 'water') {
-    if (!plot) return { error: 'Hier wächst nichts.' };
+    if (!plot) return { error: 'Nothing grows here.' };
     const sp = speciesById(plot.species);
-    if (plot.growth >= sp.growth) return { error: 'Ausgewachsen — bereit zur Ernte!' };
+    if (plot.growth >= sp.growth) return { error: 'Fully grown — ready to harvest!' };
     growPlot(plot, eff.mult, player);
     if (eff.splash) waterRandomOther(plotIdx, player);
   } else if (action === 'harvest') {
-    if (!plot) return { error: 'Hier wächst nichts.' };
+    if (!plot) return { error: 'Nothing grows here.' };
     const sp = speciesById(plot.species);
-    if (plot.growth < sp.growth) return { error: 'Noch nicht ausgewachsen.' };
+    if (plot.growth < sp.growth) return { error: 'Not fully grown yet.' };
     garden.plots[plotIdx] = null;
     garden.harvestedTotal += 1;
     p.harvests += 1;
@@ -235,9 +235,9 @@ function applyAction(player, action, plotIdx, speciesId) {
     const boost = BOOSTS[sp.id];
     const from = Math.max(garden.boosts[sp.id] || 0, now);
     garden.boosts[sp.id] = Math.min(now + BOOST_CAP_MS, from + BOOST_BASE_MS * eff.durationX);
-    addLog({ player, text: `hat ${sp.name} ${sp.emoji} geerntet — Boost „${boost.name}" ${boost.emoji} für alle!` });
+    addLog({ player, text: `harvested ${sp.name} ${sp.emoji} — boost "${boost.name}" ${boost.emoji} for everyone!` });
   } else {
-    return { error: 'Unbekannte Aktion.' };
+    return { error: 'Unknown action.' };
   }
 
   p.clicks += 1;
@@ -289,50 +289,50 @@ function applyCheat(b) {
 
   switch (b.cmd) {
     case 'grow': {
-      if (!plot) return { error: 'Beet leer oder ungültig.' };
+      if (!plot) return { error: 'Plot empty or invalid.' };
       const sp = speciesById(plot.species);
       plot.growth = Math.max(0, Math.min(sp.growth, Math.round(Number(b.value) || 0)));
-      return { ok: `Beet ${b.plot}: ${sp.name} auf ${plot.growth}/${sp.growth}` };
+      return { ok: `Plot ${b.plot}: ${sp.name} at ${plot.growth}/${sp.growth}` };
     }
     case 'fill': {
-      if (!plot) return { error: 'Beet leer oder ungültig.' };
+      if (!plot) return { error: 'Plot empty or invalid.' };
       const sp = speciesById(plot.species);
       plot.growth = sp.growth;
-      return { ok: `Beet ${b.plot}: ${sp.name} ausgewachsen — bereit zur Ernte` };
+      return { ok: `Plot ${b.plot}: ${sp.name} fully grown — ready to harvest` };
     }
     case 'clear': {
-      if (!idxOk) return { error: 'Ungültiges Beet.' };
+      if (!idxOk) return { error: 'Invalid plot.' };
       garden.plots[b.plot] = null;
-      return { ok: `Beet ${b.plot} geleert` };
+      return { ok: `Plot ${b.plot} cleared` };
     }
     case 'plant': {
-      if (!idxOk) return { error: 'Ungültiges Beet.' };
+      if (!idxOk) return { error: 'Invalid plot.' };
       const sp = speciesById(b.species);
-      if (!sp) return { error: `Unbekannte Sorte "${b.species}". Ids: ${SPECIES.map(s => s.id).join(', ')}` };
+      if (!sp) return { error: `Unknown species "${b.species}". Ids: ${SPECIES.map(s => s.id).join(', ')}` };
       garden.plots[b.plot] = { species: sp.id, growth: 0, plantedBy: 'cheat', plantedAt: now };
-      return { ok: `Beet ${b.plot}: ${sp.name} gepflanzt (Unlock ignoriert)` };
+      return { ok: `Plot ${b.plot}: ${sp.name} planted (unlock ignored)` };
     }
     case 'clicks': {
       garden.totalClicks = Math.max(0, Math.round(Number(b.value) || 0));
       return { ok: `totalClicks = ${garden.totalClicks}` };
     }
     case 'boost': {
-      if (!BOOSTS[b.species]) return { error: `Unbekannte Sorte "${b.species}".` };
+      if (!BOOSTS[b.species]) return { error: `Unknown species "${b.species}".` };
       const min = Math.round(Number(b.value) || 0);
-      if (min <= 0) { delete garden.boosts[b.species]; return { ok: `Boost ${b.species} deaktiviert` }; }
+      if (min <= 0) { delete garden.boosts[b.species]; return { ok: `Boost ${b.species} deactivated` }; }
       garden.boosts[b.species] = now + min * 60000;
-      return { ok: `Boost „${BOOSTS[b.species].name}" aktiv für ${min} min` };
+      return { ok: `Boost "${BOOSTS[b.species].name}" active for ${min} min` };
     }
     case 'cooldown': {
       const p = garden.players[b.player];
-      if (!p) return { error: `Spieler "${b.player}" unbekannt.` };
+      if (!p) return { error: `Unknown player "${b.player}".` };
       p.lastAction = 0;
-      return { ok: `Cooldown von ${b.player} zurückgesetzt` };
+      return { ok: `Cooldown of ${b.player} reset` };
     }
     case 'score': {
       const game = SCORE_GAMES.includes(b.game) ? b.game : SCORE_GAMES[0];
       const name = String(b.player || '').trim().slice(0, 20);
-      if (name.length < 2) return { error: 'Name zu kurz.' };
+      if (name.length < 2) return { error: 'Name too short.' };
       const value = Math.round(Number(b.value) || 0);
       const board = scores[game] || (scores[game] = []);
       const existing = board.find(e => e.name === name);
@@ -348,10 +348,10 @@ function applyCheat(b) {
       const before = (scores[game] || []).length;
       scores[game] = (scores[game] || []).filter(e => e.name !== String(b.player || ''));
       saveScores();
-      return { ok: before === (scores[game] || []).length ? 'Nichts gelöscht.' : `${b.player} aus ${game} entfernt` };
+      return { ok: before === (scores[game] || []).length ? 'Nothing removed.' : `Removed ${b.player} from ${game}` };
     }
     default:
-      return { error: 'Unbekannter Befehl.' };
+      return { error: 'Unknown command.' };
   }
 }
 
@@ -385,7 +385,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname.startsWith('/api/')) {
     const last = ipLast.get(ip) || 0;
     if (req.method === 'POST' && Date.now() - last < IP_THROTTLE_MS) {
-      return send(res, 429, { error: 'Langsam — der Garten läuft nicht weg.' });
+      return send(res, 429, { error: 'Slow down — the garden is not going anywhere.' });
     }
     if (req.method === 'POST') ipLast.set(ip, Date.now());
   }
@@ -398,7 +398,7 @@ const server = http.createServer((req, res) => {
   const scoreMatch = url.pathname.match(/^\/api\/scores\/([a-z0-9-]+)$/);
   if (scoreMatch) {
     const game = scoreMatch[1];
-    if (!SCORE_GAMES.includes(game)) return send(res, 404, { error: 'Unbekanntes Spiel.' });
+    if (!SCORE_GAMES.includes(game)) return send(res, 404, { error: 'Unknown game.' });
 
     if (req.method === 'GET') {
       return send(res, 200, { scores: (scores[game] || []).slice(0, 50) });
@@ -406,18 +406,18 @@ const server = http.createServer((req, res) => {
     if (req.method === 'POST') {
       const last = scoreLast.get(ip) || 0;
       if (Date.now() - last < SCORE_COOLDOWN_MS) {
-        return send(res, 429, { error: 'Bitte warte kurz vor dem nächsten Eintrag.' });
+        return send(res, 429, { error: 'Please wait a moment before the next submission.' });
       }
       let raw = '';
       req.on('data', c => { raw += c; if (raw.length > 2048) req.destroy(); });
       req.on('end', () => {
         let body;
-        try { body = JSON.parse(raw); } catch { return send(res, 400, { error: 'Kaputtes JSON.' }); }
+        try { body = JSON.parse(raw); } catch { return send(res, 400, { error: 'Broken JSON.' }); }
         const name = cleanName(body.player);
-        if (!name) return send(res, 400, { error: 'Bitte gib einen Namen mit 2–20 Zeichen an.' });
+        if (!name) return send(res, 400, { error: 'Please provide a name (2–20 characters).' });
         const score = Number(body.score);
         if (!Number.isInteger(score) || score < 1 || score > 1000000) {
-          return send(res, 400, { error: 'Ungültiger Score.' });
+          return send(res, 400, { error: 'Invalid score.' });
         }
         scoreLast.set(ip, Date.now());
         const board = submitScore(game, name, score);
@@ -426,21 +426,21 @@ const server = http.createServer((req, res) => {
       });
       return;
     }
-    return send(res, 405, { error: 'Methode nicht erlaubt.' });
+    return send(res, 405, { error: 'Method not allowed.' });
   }
 
   if (url.pathname === '/api/feedback' && req.method === 'POST') {
     const last = feedbackLast.get(ip) || 0;
     if (Date.now() - last < FEEDBACK_COOLDOWN_MS) {
-      return send(res, 429, { error: 'Bitte warte eine Minute bis zum nächsten Feedback.' });
+      return send(res, 429, { error: 'Please wait a minute before the next feedback.' });
     }
     let raw = '';
     req.on('data', c => { raw += c; if (raw.length > 8192) req.destroy(); });
     req.on('end', () => {
       let body;
-      try { body = JSON.parse(raw); } catch { return send(res, 400, { error: 'Kaputtes JSON.' }); }
+      try { body = JSON.parse(raw); } catch { return send(res, 400, { error: 'Broken JSON.' }); }
       const text = String(body.text || '').trim().slice(0, 2000);
-      if (text.length < 3) return send(res, 400, { error: 'Bitte schreib ein paar Zeichen mehr.' });
+      if (text.length < 3) return send(res, 400, { error: 'Please write a few more characters.' });
       // Deliberately anonymous: timestamp, page and text only — no IP, no user agent.
       const entry = { ts: new Date().toISOString(), page: String(body.page || '').slice(0, 200), text };
       feedbackLast.set(ip, Date.now());
@@ -455,7 +455,7 @@ const server = http.createServer((req, res) => {
   // Feedback einsehen — nur wenn FEEDBACK_TOKEN als Env-Variable gesetzt ist.
   if (url.pathname === '/api/feedback' && req.method === 'GET') {
     if (!FEEDBACK_TOKEN || url.searchParams.get('token') !== FEEDBACK_TOKEN) {
-      return send(res, 404, { error: 'Nicht gefunden.' });
+      return send(res, 404, { error: 'Not found.' });
     }
     let entries = [];
     try {
@@ -467,13 +467,13 @@ const server = http.createServer((req, res) => {
 
   // Dev cheat console — 404 unless CHEAT_TOKEN is configured (never in prod)
   if (url.pathname === '/api/cheat' && req.method === 'POST') {
-    if (!CHEAT_TOKEN) return send(res, 404, { error: 'Nicht gefunden.' });
+    if (!CHEAT_TOKEN) return send(res, 404, { error: 'Not found.' });
     let raw = '';
     req.on('data', c => { raw += c; if (raw.length > 4096) req.destroy(); });
     req.on('end', () => {
       let body;
-      try { body = JSON.parse(raw); } catch { return send(res, 400, { error: 'Kaputtes JSON.' }); }
-      if (body.token !== CHEAT_TOKEN) return send(res, 403, { error: 'Falscher Token.' });
+      try { body = JSON.parse(raw); } catch { return send(res, 400, { error: 'Broken JSON.' }); }
+      if (body.token !== CHEAT_TOKEN) return send(res, 403, { error: 'Wrong token.' });
       const result = applyCheat(body);
       if (result.error) return send(res, 400, result);
       dirty = true;
@@ -487,12 +487,12 @@ const server = http.createServer((req, res) => {
     req.on('data', c => { raw += c; if (raw.length > 2048) req.destroy(); });
     req.on('end', () => {
       let body;
-      try { body = JSON.parse(raw); } catch { return send(res, 400, { error: 'Kaputtes JSON.' }); }
+      try { body = JSON.parse(raw); } catch { return send(res, 400, { error: 'Broken JSON.' }); }
       const player = cleanName(body.player);
-      if (!player) return send(res, 400, { error: 'Bitte gib einen Namen mit 2–20 Zeichen an.' });
+      if (!player) return send(res, 400, { error: 'Please provide a name (2–20 characters).' });
       const result = applyAction(player, body.action, body.plot, body.species);
       if (result.error === 'cooldown') {
-        return send(res, 429, { error: `Noch ${Math.ceil(result.wait / 1000)}s bis zum nächsten Klick.`, waitMs: result.wait, ...stateFor(player) });
+        return send(res, 429, { error: `Wait ${Math.ceil(result.wait / 1000)}s until your next click.`, waitMs: result.wait, ...stateFor(player) });
       }
       if (result.error) return send(res, 400, { error: result.error, ...stateFor(player) });
       return send(res, 200, { lucky: !!result.lucky, ...stateFor(player) });
@@ -510,9 +510,9 @@ const server = http.createServer((req, res) => {
     }
   }
 
-  send(res, 404, { error: 'Nicht gefunden.' });
+  send(res, 404, { error: 'Not found.' });
 });
 
 loadGarden();
 loadScores();
-server.listen(PORT, () => console.log(`🪴 Zen Garden läuft auf http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`🪴 Site backend running at http://localhost:${PORT}`));

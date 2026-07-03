@@ -59,7 +59,7 @@ const TOOLS = [
   },
 
   {
-    id: 'bruecke', label: 'Brücke', icon: '∩', color: '#f0c040',
+    id: 'bruecke', label: 'Bridge', icon: '∩', color: '#f0c040',
     create(p, a) {
       const W = 120, wH = 50, wT = 10, fT = 12;
       const r = fill('#f0c040');

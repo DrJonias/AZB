@@ -1,37 +1,36 @@
 # Zen Garden 🪴
 
-Gemeinsamer Multiplayer-Zen-Garten. Jede:r Spieler:in hat **einen Klick pro Minute** —
-pflanzen, gießen oder ernten. Neue Sorten schaltet die Community gemeinsam über die
-Gesamtzahl aller Klicks frei. Der Fortschritt ist bewusst langsam: der Garten soll
-über Monate wachsen.
+A shared multiplayer Zen Garden. Each player gets **one click per minute** —
+plant, water, or harvest. New species unlock together for the community based on
+total clicks. The pace is intentionally slow: the garden grows over months.
 
-Das Backend ist das zentrale Site-Backend in [`../../server/`](../../server/) —
-dort steht auch, wie man es lokal startet und wie das Deployment aufs NAS
-funktioniert. Lokal reicht `node server/server.js` im Repo-Root, dann läuft der
-Garten auf <http://localhost:8787/apps/zen-garden/>.
+The backend is the central site backend in [`../../server/`](../../server/) —
+that README also explains how to run it locally and deploy it to the NAS.
+Locally, start with `node server/server.js` in the repo root, then open
+<http://localhost:8787/apps/zen-garden/>.
 
-## Spielregeln
+## Rules
 
-- **1 Klick pro Minute** pro Spieler:in (serverseitig erzwungen)
-- Leeres Beet anklicken → Sorte pflanzen
-- Pflanze anklicken → gießen (+1 Wachstum)
-- Ausgewachsene Pflanze anklicken → ernten (Beet wird frei) — **aktiviert den Boost der Sorte für alle!**
-- Sorten-Freischaltung über Community-Gesamtklicks (bis 300.000 für die Kirschblüte)
+- **1 click per minute** per player (enforced server-side)
+- Click an empty plot → plant a species
+- Click a plant → water it (+1 growth)
+- Click a fully grown plant → harvest it (plot becomes free again) — **this activates that species' boost for everyone!**
+- New species unlock by community total clicks (up to 300,000 for Cherry Blossom)
 
-## Ernte-Boosts
+## Harvest boosts
 
-Jede Sorte hat einen eigenen **globalen** Boost: Wer eine ausgewachsene Pflanze
-erntet, aktiviert ihn für die gesamte Community. Basisdauer 1 Stunde; erneute
-Ernte derselben Sorte verlängert (maximal 12 h im Voraus). Verschiedene Boosts
-stapeln sich frei, beim gleichen Typ gilt der stärkste.
+Each species has its own **global** boost: harvesting a fully grown plant
+activates the boost for the whole community. Base duration is 1 hour; harvesting
+the same species again extends it (up to 12 hours in advance). Different boosts
+stack freely; for the same type, the strongest one applies.
 
-| Sorte | Boost | Wirkung |
+| Species | Boost | Effect |
 |---|---|---|
-| 🍀 Moos | Frisches Moos | Cooldown 40 s statt 60 s |
-| 🌾 Pampasgras | Pampas-Power | Gießen zählt doppelt (+2 Wachstum) |
-| 🎍 Bambus | Sprinkler | Gießen bewässert zusätzlich eine zufällige Pflanze |
-| 🌼 Chrysantheme | Glücksblüte | 25 % Chance: Klick ohne Cooldown |
-| 🍁 Fächerahorn | Herbstwind | Neu aktivierte Boosts halten 2 h statt 1 h |
-| 🌳 Bonsai | Erleuchtung | Klicks zählen doppelt für Freischaltungen |
-| 🪷 Lotus | Monsun | Alle Pflanzen wachsen +1 pro Minute |
-| 🌸 Kirschblüte | Hanami | Cooldown nur 1 Sekunde |
+| 🍀 Moss | Fresh Moss | Cooldown 40 s instead of 60 s |
+| 🌾 Pampas Grass | Pampas Power | Watering counts double (+2 growth) |
+| 🎍 Bamboo | Sprinkler | Watering also waters one random plant |
+| 🌼 Chrysanthemum | Lucky Bloom | 25% chance: click without cooldown |
+| 🍁 Japanese Maple | Autumn Wind | new boosts last 2 h instead of 1 h |
+| 🌳 Bonsai | Enlightenment | clicks count double for unlocks |
+| 🪷 Lotus | Monsoon | all plants grow +1 per minute |
+| 🌸 Cherry Blossom | Hanami | cooldown only 1 second |

@@ -27,8 +27,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   document.getElementById('fbSend').addEventListener('click', async ()=>{
     const msg = text.value.trim();
-    if (msg.length < 3) { status.textContent = 'Bitte schreib ein paar Zeichen mehr.'; return; }
-    status.textContent = 'Senden…';
+    if (msg.length < 3) { status.textContent = 'Please type a few more characters.'; return; }
+    status.textContent = 'Sending…';
     try {
       const res = await fetch('api/feedback', {
         method: 'POST',
@@ -37,11 +37,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || res.statusText);
-      status.textContent = 'Danke für dein Feedback! 🙏';
+      status.textContent = 'Thanks for your feedback! 🙏';
       text.value = '';
       setTimeout(()=>panel.classList.add('hidden'), 1500);
     } catch (err) {
-      status.textContent = 'Senden fehlgeschlagen: ' + err.message;
+      status.textContent = 'Sending failed: ' + err.message;
     }
   });
 });

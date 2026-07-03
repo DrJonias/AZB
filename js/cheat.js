@@ -1,8 +1,7 @@
-// Dev-Cheat-Panel. Bewusst merge-sicher: aktiviert sich NUR unter /dev/
-// (oder localhost), und das Backend beantwortet /api/cheat nur, wenn dort
-// CHEAT_TOKEN gesetzt ist — in Produktion ist beides nie der Fall, der Code
-// darf also gefahrlos auf master liegen.
-// Öffnen: Ctrl+Alt+C oder 5× schnell aufs Seiten-Icon tippen.
+// Dev cheat panel. Deliberately merge-safe: only activates under /dev/
+// (or localhost), and the backend only responds to /api/cheat if CHEAT_TOKEN is set.
+// In production neither is true, so this code is safe to keep on master.
+// Open with Ctrl+Alt+C or tap the page icon 5 times quickly.
 (() => {
   const isDev = location.pathname.startsWith('/dev/') || location.hostname === 'localhost';
   if (!isDev) return;
@@ -127,56 +126,56 @@
     const saveTok = el('button', C.btn, { textContent: '💾' });
     saveTok.addEventListener('click', () => {
       localStorage.setItem('cheat-token', refs.token.value.trim());
-      status('Token gespeichert', true);
+      status('Token saved', true);
     });
     panel.appendChild(row(refs.token, saveTok));
 
-    // Beet
-    panel.appendChild(head('Beet'));
+    // Plot
+    panel.appendChild(head('Plot'));
     refs.plot = el('select', C.input + ';flex:1');
-    const reload = el('button', C.btn, { textContent: '↻', title: 'Neu laden' });
+    const reload = el('button', C.btn, { textContent: '↻', title: 'Reload' });
     reload.addEventListener('click', refreshState);
     panel.appendChild(row(refs.plot, reload));
 
-    const fill = el('button', C.btn + ';flex:1', { textContent: '✨ Ausgewachsen' });
+    const fill = el('button', C.btn + ';flex:1', { textContent: '✨ Fully grown' });
     fill.addEventListener('click', () => run({ cmd: 'fill', plot: +refs.plot.value }));
-    const clear = el('button', C.btn + ';flex:1', { textContent: '🗑 Leeren' });
+    const clear = el('button', C.btn + ';flex:1', { textContent: '🗑 Clear' });
     clear.addEventListener('click', () => run({ cmd: 'clear', plot: +refs.plot.value }));
     panel.appendChild(row(fill, clear));
 
-    refs.growth = el('input', C.input + ';flex:1', { type: 'number', min: 0, placeholder: 'Wachstum' });
-    const setGrowth = el('button', C.btn, { textContent: 'Setzen' });
+    refs.growth = el('input', C.input + ';flex:1', { type: 'number', min: 0, placeholder: 'Growth' });
+    const setGrowth = el('button', C.btn, { textContent: 'Set' });
     setGrowth.addEventListener('click', () => run({ cmd: 'grow', plot: +refs.plot.value, value: +refs.growth.value }));
     panel.appendChild(row(refs.growth, setGrowth));
 
     refs.plantSpecies = el('select', C.input + ';flex:1');
-    const plant = el('button', C.btn, { textContent: '🌱 Pflanzen' });
+    const plant = el('button', C.btn, { textContent: '🌱 Plant' });
     plant.addEventListener('click', () => run({ cmd: 'plant', plot: +refs.plot.value, species: refs.plantSpecies.value }));
     panel.appendChild(row(refs.plantSpecies, plant));
 
     // Community
     panel.appendChild(head('Community'));
     refs.clicks = el('input', C.input + ';flex:1', { type: 'number', min: 0, placeholder: 'totalClicks' });
-    const setClicks = el('button', C.btn, { textContent: 'Setzen' });
+    const setClicks = el('button', C.btn, { textContent: 'Set' });
     setClicks.addEventListener('click', () => run({ cmd: 'clicks', value: +refs.clicks.value }));
     panel.appendChild(row(refs.clicks, setClicks));
 
     // Boost
     panel.appendChild(head('Boost'));
     refs.boostSpecies = el('select', C.input + ';flex:1');
-    refs.boostMin = el('input', C.input + ';width:70px', { type: 'number', min: 0, value: 60, title: 'Minuten' });
-    const boostOn = el('button', C.btn, { textContent: 'An' });
+    refs.boostMin = el('input', C.input + ';width:70px', { type: 'number', min: 0, value: 60, title: 'Minutes' });
+    const boostOn = el('button', C.btn, { textContent: 'On' });
     boostOn.addEventListener('click', () => run({ cmd: 'boost', species: refs.boostSpecies.value, value: +refs.boostMin.value }));
-    const boostOff = el('button', C.btn, { textContent: 'Aus' });
+    const boostOff = el('button', C.btn, { textContent: 'Off' });
     boostOff.addEventListener('click', () => run({ cmd: 'boost', species: refs.boostSpecies.value, value: 0 }));
     panel.appendChild(row(refs.boostSpecies, refs.boostMin, boostOn, boostOff));
 
-    // Spieler
-    panel.appendChild(head('Spieler'));
+    // Players
+    panel.appendChild(head('Players'));
     refs.player = el('input', C.input + ';flex:1', {
       placeholder: 'Name', value: localStorage.getItem('zen-name') || localStorage.getItem('doodle-name') || '',
     });
-    const cd = el('button', C.btn, { textContent: '⏱ Cooldown weg' });
+    const cd = el('button', C.btn, { textContent: '⏱ Remove cooldown' });
     cd.addEventListener('click', () => run({ cmd: 'cooldown', player: refs.player.value.trim() }));
     panel.appendChild(row(refs.player, cd));
 
@@ -185,18 +184,18 @@
     refs.scoreName = el('input', C.input + ';flex:1', {
       placeholder: 'Name', value: localStorage.getItem('doodle-name') || '',
     });
-    refs.scoreVal = el('input', C.input + ';width:80px', { type: 'number', placeholder: 'Punkte' });
-    const setScore = el('button', C.btn, { textContent: 'Setzen' });
+    refs.scoreVal = el('input', C.input + ';width:80px', { type: 'number', placeholder: 'Points' });
+    const setScore = el('button', C.btn, { textContent: 'Set' });
     setScore.addEventListener('click', () =>
       run({ cmd: 'score', game: 'doodle-jump', player: refs.scoreName.value.trim(), value: +refs.scoreVal.value }));
-    const delScore = el('button', C.btn, { textContent: '🗑' , title: 'Eintrag löschen' });
+    const delScore = el('button', C.btn, { textContent: '🗑' , title: 'Delete entry' });
     delScore.addEventListener('click', () =>
       run({ cmd: 'unscore', game: 'doodle-jump', player: refs.scoreName.value.trim() }));
     panel.appendChild(row(refs.scoreName, refs.scoreVal, setScore, delScore));
 
     // status line
     refs.status = el('div', 'margin-top:10px;font:12px Consolas,Menlo,monospace;min-height:16px;color:#8da3c8', {
-      textContent: localStorage.getItem('cheat-token') ? 'Bereit.' : 'Zuerst Token eintragen und speichern.',
+      textContent: localStorage.getItem('cheat-token') ? 'Ready.' : 'Enter a token and save it first.',
     });
     panel.appendChild(refs.status);
 

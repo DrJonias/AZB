@@ -2,21 +2,20 @@
 
 Lightweight collection of mini games with a playful single-page homepage. Built to be easily extended with additional apps.
 
-## Struktur
+## Structure
 
-**Ein Frontend, ein Backend:** Die Seite ist statisch (nginx liefert sie aus),
-dazu läuft genau ein kleines Node.js-Backend für alles Dynamische.
+**One frontend, one backend:** The site is static (served by nginx), and a small Node.js backend handles all dynamic features.
 
-- `index.html` – zentrale Startseite mit Links zu den Mini-Apps
-- `css/` – geteilte Styles und globale Projektstile
-- `js/` – projektweites Main-Skript für die Startseite (inkl. Feedback-Widget)
-- `apps/` – einzelne Mini-Apps mit eigenen HTML-, JS- und CSS-Dateien
-- `server/` – das Site-Backend (zero-dependency Node.js, siehe `server/readme.md`):
-  Zen Garden, Highscores (`/api/scores/<spiel>`), anonymes Feedback
-- `deploy/` – Deploy-Vorlagen fürs NAS (Docker Compose + nginx-Config)
+- `index.html` – central landing page with links to the mini apps
+- `css/` – shared styles and global project styling
+- `js/` – project-wide main script for the homepage (including the feedback widget)
+- `apps/` – individual mini apps with their own HTML, JS, and CSS
+- `server/` – site backend (zero-dependency Node.js, see `server/readme.md`):
+  Zen Garden, highscores (`/api/scores/<game>`), anonymous feedback
+- `deploy/` – NAS deployment templates (Docker Compose + nginx config)
 
-Lokal entwickeln: `node server/server.js` startet Backend **und** liefert die
-ganze Seite auf <http://localhost:8787> aus — mehr braucht es nicht.
+Local development: `node server/server.js` starts the backend **and** serves the
+entire site at <http://localhost:8787> — nothing else is required.
 
 ## Apps
 
@@ -26,16 +25,16 @@ ganze Seite auf <http://localhost:8787> aus — mehr braucht es nicht.
 - `apps/fake-o-meter`
 - `apps/draw-the-flag`
 - `apps/marble-run`
-- `apps/stempeluhr` – Clock-In/Clock-Out mit 42h-Woche (8:24 h/Tag), Feierabendzeit & Überstunden
-- `apps/zen-garden` – Multiplayer-Clicker (Spielregeln: `apps/zen-garden/readme.md`)
-- `apps/doodle-jump` – Jump'n'Run mit globalem Scoreboard
+- `apps/stempeluhr` – Clock-In/Clock-Out with a 42h workweek (8:24 h/day), end-of-day time & overtime
+- `apps/zen-garden` – multiplayer clicker (rules: `apps/zen-garden/readme.md`)
+- `apps/doodle-jump` – jump'n'run with a global scoreboard
 
 ## Branches & Deployment
 
-- `master` → Produktion (`timetheft.ch`), `dev` → Vorschau (`timetheft.ch/dev`, eigenes Backend mit eigenen Daten).
-- Workflow: Änderungen auf `dev` pushen, auf `timetheft.ch/dev` testen, bei Zufriedenheit nach `master` mergen.
-- Deploy-Vorlagen und Anleitung: `deploy/` (Docker Compose) und `server/readme.md`.
+- `master` → production (`timetheft.ch`), `dev` → preview (`timetheft.ch/dev`, separate backend with its own data).
+- Workflow: push changes to `dev`, test on `timetheft.ch/dev`, merge to `master` once approved.
+- Deployment templates and instructions: `deploy/` (Docker Compose) and `server/readme.md`.
 
 ## ToDo
 
-_Aktuell keine offenen ToDos._
+_None at the moment._

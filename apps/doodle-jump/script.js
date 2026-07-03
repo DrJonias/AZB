@@ -223,11 +223,11 @@ function gameOver() {
 function renderBoard(entries, highlightName) {
   const list = $('boardList');
   if (!entries.length) {
-    list.innerHTML = '<li class="board-empty">Noch keine Einträge — sei die/der Erste!</li>';
+    list.innerHTML = '<li class="board-empty">No entries yet — be the first!</li>';
     return;
   }
   list.innerHTML = entries.slice(0, 10).map(e =>
-    `<li class="${e.name === highlightName ? 'me' : ''}"><span>${esc(e.name)}</span><span>${e.score.toLocaleString('de-DE')}</span></li>`
+    `<li class="${e.name === highlightName ? 'me' : ''}"><span>${esc(e.name)}</span><span>${e.score.toLocaleString('en-US')}</span></li>`
   ).join('');
 }
 
@@ -241,7 +241,7 @@ async function fetchBoard() {
     const data = await res.json();
     renderBoard(data.scores || [], localStorage.getItem('doodle-name'));
   } catch {
-    $('boardList').innerHTML = '<li class="board-empty">Scoreboard nicht erreichbar.</li>';
+    $('boardList').innerHTML = '<li class="board-empty">Scoreboard unreachable.</li>';
   }
 }
 
@@ -249,9 +249,9 @@ async function submitScore() {
   if (scoreSubmitted) return;
   const name = $('nameInput').value.trim();
   const finalScore = Math.floor(bestThisRun / 10);
-  if (name.length < 2) { $('submitStatus').textContent = 'Mindestens 2 Zeichen, bitte.'; return; }
+  if (name.length < 2) { $('submitStatus').textContent = 'Please enter at least 2 characters.'; return; }
   localStorage.setItem('doodle-name', name);
-  $('submitStatus').textContent = 'Eintragen…';
+  $('submitStatus').textContent = 'Submitting…';
   try {
     const res = await fetch(`${apiBase}/api/scores/${GAME_ID}`, {
       method: 'POST',
@@ -261,7 +261,7 @@ async function submitScore() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || res.statusText);
     scoreSubmitted = true;
-    $('submitStatus').textContent = data.rank ? `Platz ${data.rank} weltweit! 🎉` : 'Eingetragen!';
+    $('submitStatus').textContent = data.rank ? `Rank ${data.rank} worldwide! 🎉` : 'Submitted!';
     $('submitRow').classList.add('hidden');
     renderBoard(data.scores || [], name);
   } catch (err) {

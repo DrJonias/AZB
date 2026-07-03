@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -13,21 +13,21 @@
   <div class="wrapper">
     <a class="back" href="../../">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      Zurück
+      Back
     </a>
 
     <header class="page-header">
       <span class="page-icon">🪴</span>
       <h1>Zen Garden</h1>
-      <p class="subtitle">Ein gemeinsamer Garten. Ein Klick pro Minute. Geduld ist alles.</p>
+      <p class="subtitle">A shared garden. One click per minute. Patience is everything.</p>
     </header>
 
     <!-- Name gate -->
     <section class="panel name-panel" id="namePanel">
-      <h2>Wie heißt du, Gärtner:in?</h2>
+      <h2>What is your name?</h2>
       <div class="name-row">
-        <input type="text" id="nameInput" maxlength="20" placeholder="Dein Name">
-        <button class="btn btn-accent" id="nameBtn">Garten betreten</button>
+        <input type="text" id="nameInput" maxlength="20" placeholder="Your name">
+        <button class="btn btn-accent" id="nameBtn">Enter garden</button>
       </div>
     </section>
 
@@ -36,36 +36,36 @@
       <div class="statusbar">
         <div class="status-left">
           <span class="me" id="meLabel"></span>
-          <span class="cooldown-text" id="cooldownText">bereit 🌊</span>
+          <span class="cooldown-text" id="cooldownText">ready 🌊</span>
         </div>
         <div class="cooldown-track"><div class="cooldown-fill" id="cooldownFill"></div></div>
       </div>
 
-      <div class="boost-bar hidden" id="boostBar" aria-label="Aktive Boosts"></div>
+      <div class="boost-bar hidden" id="boostBar" aria-label="Active boosts"></div>
 
       <div class="offline hidden" id="offlineBanner">
-        Server nicht erreichbar — bitte später noch einmal versuchen.
-        <span class="offline-dev">(Lokal: <code>node server/server.js</code>)</span>
+        Server unreachable — please try again later.
+        <span class="offline-dev">(Local: <code>node server/server.js</code>)</span>
       </div>
 
-      <section class="garden" id="garden" aria-label="Gartenbeete"></section>
+      <section class="garden" id="garden" aria-label="Garden plots"></section>
 
       <div class="columns">
         <section class="panel">
-          <h2>🌿 Sorten</h2>
+          <h2>🌿 Species</h2>
           <div class="species-list" id="speciesList"></div>
         </section>
 
         <section class="panel">
-          <h2>🏮 Gemeinschaft</h2>
+          <h2>🏮 Community</h2>
           <div class="stats-row">
-            <div class="stat"><span class="stat-num" id="statClicks">–</span><span class="stat-cap">Klicks insgesamt</span></div>
-            <div class="stat"><span class="stat-num" id="statHarvest">–</span><span class="stat-cap">Ernten</span></div>
+            <div class="stat"><span class="stat-num" id="statClicks">–</span><span class="stat-cap">Total clicks</span></div>
+            <div class="stat"><span class="stat-num" id="statHarvest">–</span><span class="stat-cap">Harvests</span></div>
           </div>
           <div class="unlock-progress" id="unlockProgress"></div>
-          <h3>Top-Gärtner</h3>
+          <h3>Top gardeners</h3>
           <ol class="top-list" id="topList"></ol>
-          <h3>Zuletzt im Garten</h3>
+          <h3>Latest in the garden</h3>
           <ul class="log-list" id="logList"></ul>
         </section>
       </div>
@@ -75,9 +75,9 @@
     <!-- Species picker for empty plots -->
     <div class="picker-overlay hidden" id="picker">
       <div class="picker-box">
-        <h3>Was möchtest du pflanzen?</h3>
+        <h3>What would you like to plant?</h3>
         <div class="picker-list" id="pickerList"></div>
-        <button class="btn" id="pickerCancel">Abbrechen</button>
+        <button class="btn" id="pickerCancel">Cancel</button>
       </div>
     </div>
 

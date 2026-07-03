@@ -1,67 +1,52 @@
-# Site-Backend
+# Site Backend
 
-Das eine Backend für die ganze Seite — zero-dependency Node.js, eine Datei.
-Historisch als Zen-Garden-Server gestartet, inzwischen zentral für alles Dynamische:
+The single backend for the entire site — zero-dependency Node.js, one file.
+Originally started as the Zen Garden server, it now handles all dynamic features:
 
 - **Zen Garden** — `GET /api/state`, `POST /api/action`
-- **Highscores** — `GET`/`POST /api/scores/<spiel>` (z. B. `doodle-jump`; pro Name
-  zählt nur der beste Score, gespeichert in `scores.json`). Neue Spiele: Eintrag
-  in der `SCORE_GAMES`-Allowlist in `server.js` ergänzen.
-- **Feedback** — `POST /api/feedback` (anonym, max. 1×/Minute pro IP), landet
-  zeilenweise in `feedback.jsonl`. Lesen: Datei im Datenordner öffnen, oder
-  `FEEDBACK_TOKEN` setzen und `GET /api/feedback?token=<wert>` aufrufen.
+- **Highscores** — `GET`/`POST /api/scores/<game>` (e.g. `doodle-jump`; only the best score per name is counted and stored in `scores.json`). Add new games by updating the `SCORE_GAMES` allowlist in `server.js`.
+- **Feedback** — `POST /api/feedback` (anonymous, max 1/minute per IP), stored
+  as JSON lines in `feedback.jsonl`. Read it by opening the file in the data folder, or set `FEEDBACK_TOKEN` and use `GET /api/feedback?token=<value>`.
 
-Alle Daten liegen als JSON-Dateien in `DATA_DIR` (Default: dieser Ordner).
+All data is stored as JSON files in `DATA_DIR` (default: this folder).
 
-## Cheat-Konsole (nur dev)
+## Cheat console (dev only)
 
-Zum Testen gibt es `POST /api/cheat` (Pflanzen wachsen lassen, Boosts setzen,
-Scores manipulieren, …) plus ein Konsolen-Overlay in Zen Garden und Doodle Jump
-(`js/cheat.js`): öffnen mit **Ctrl+Alt+C** oder 5× schnell aufs Seiten-Icon
-tippen, dann `help` eingeben.
+For testing there is `POST /api/cheat` (grow plants, activate boosts,
+manipulate scores, …) plus a console overlay in Zen Garden and Doodle Jump
+(`js/cheat.js`): open with **Ctrl+Alt+C** or tap the page icon quickly 5 times,
+then type `help`.
 
-Das ist doppelt merge-sicher — der Code darf auf master liegen, weil er dort
-wirkungslos ist:
+This is merge-safe in two ways — the code can stay on master because it has no effect there:
 
-1. Der Endpoint existiert nur, wenn die Env-Variable `CHEAT_TOKEN` gesetzt ist
-   (**nur beim `backend-dev`-Container setzen, nie bei `backend`!**) — ohne sie
-   antwortet `/api/cheat` mit 404.
-2. Das Overlay aktiviert sich nur unter `/dev/` oder auf `localhost`.
+1. The endpoint exists only when the `CHEAT_TOKEN` environment variable is set
+   (**only set it in the `backend-dev` container, never in `backend`!**) — without it `/api/cheat` responds with 404.
+2. The overlay activates only under `/dev/` or on `localhost`.
 
-Erstbenutzung: Konsole öffnen und einmal `token <wert>` eingeben (der Wert aus
-der Compose-Datei); er wird im Browser gespeichert.
+First use: open the console and enter `token <value>` once (the value comes from
+the compose file); it is stored in the browser.
 
-## Lokal starten
+## Run locally
 
 ```
 node server/server.js
 ```
 
-Läuft auf <http://localhost:8787> und liefert auch gleich die komplette statische
-Seite aus (Repo-Root) — lokal braucht es also weder nginx noch Docker.
-Anderer Port: `PORT=3000 node server/server.js`
+Runs at <http://localhost:8787> and also serves the full static site (repo root) —
+so local development does not require nginx or Docker.
+To use another port: `PORT=3000 node server/server.js`
 
 ## Deployment (NAS, Docker)
 
-Die Produktion läuft nach dem Muster in [`../deploy/`](../deploy/):
+Production uses the pattern in [`../deploy/`](../deploy/):
 
-- **`web`** (nginx) liefert die statische Seite aus und proxied `/api/` →
-  `backend:8787` bzw. `/dev/api/` → `backend-dev:8787`
-  (Config: [`../deploy/nginx/default.conf`](../deploy/nginx/default.conf))
-- **`webhook`** (alpine/git) hält die Checkouts `./site` (master) und
-  `./site-dev` (dev) per `git pull` jede Minute aktuell
-- **`backend`** / **`backend-dev`** (node:20-alpine) starten `server.js` direkt
-  aus dem jeweiligen Checkout neu (spätestens alle 5 Minuten) und übernehmen so
-  Code-Änderungen automatisch — kein Image-Build, kein Docker-Socket nötig
+- **`web`** (nginx) serves the static site and proxies `/api/` → `backend:8787` and `/dev/api/` → `backend-dev:8787`
+  (config: [`../deploy/nginx/default.conf`](../deploy/nginx/default.conf))
+- **`webhook`** (alpine/git) keeps the checkouts `./site` (master) and `./site-dev` (dev) up to date with `git pull` every minute
+- **`backend`** / **`backend-dev`** (node:20-alpine) restart `server.js` directly from the current checkout (at least every 5 minutes) and automatically apply code changes — no image build, no Docker socket needed
 
-Dadurch deployt sich ein `git push` von selbst; die Compose-Datei auf dem NAS
-muss nur bei Topologie-Änderungen (neuer Service, anderer Port) angefasst werden.
+This makes a `git push` deploy automatically; the compose file on the NAS only needs changes for topology updates (new service, different port).
 
-Die Datenordner (`backend-data`, `backend-data-dev`) liegen bewusst **außerhalb**
-der Checkouts: `./site` wird von `git pull` verwaltet — läge der Spielstand dort,
-wäre er bei jedem `git reset` in Gefahr.
+The data folders (`backend-data`, `backend-data-dev`) are intentionally outside the checkouts: `./site` is managed by `git pull` — if save data lived there it would be at risk on every `git reset`.
 
-Einrichtung von Grund auf: `deploy/docker-compose.yml` in einen Ordner aufs NAS
-legen, `deploy/nginx/default.conf` daneben als `nginx/default.conf`, dann
-`docker compose up -d` (oder im Synology Container Manager als Projekt anlegen).
-Alles Weitere (Checkouts klonen, Datenordner anlegen) passiert automatisch.
+Initial setup: place `deploy/docker-compose.yml` in a folder on the NAS and `deploy/nginx/default.conf` next to it as `nginx/default.conf`, then run `docker compose up -d` (or create the project in Synology Container Manager). Everything else (cloning checkouts, creating data folders) happens automatically.
