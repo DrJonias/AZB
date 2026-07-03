@@ -1,7 +1,8 @@
-// Dev-Cheat-Konsole. Bewusst merge-sicher: aktiviert sich NUR unter /dev/
+// Dev-Cheat-Panel. Bewusst merge-sicher: aktiviert sich NUR unter /dev/
 // (oder localhost), und das Backend beantwortet /api/cheat nur, wenn dort
 // CHEAT_TOKEN gesetzt ist — in Produktion ist beides nie der Fall, der Code
 // darf also gefahrlos auf master liegen.
+// Öffnen: Ctrl+Alt+C oder 5× schnell aufs Seiten-Icon tippen.
 (() => {
   const isDev = location.pathname.startsWith('/dev/') || location.hostname === 'localhost';
   if (!isDev) return;
@@ -10,59 +11,35 @@
   const apiBase = location.origin + basePath;
 
   let panel = null;
+  let gstate = null;   // last /api/state payload for the dropdowns
+  const refs = {};     // named controls
 
-  const HELP = [
-    'Befehle:',
-    '  token <wert>              Cheat-Token speichern (einmalig)',
-    '  grow <beet> <wert>        Wachstum eines Beets setzen (0-basiert)',
-    '  fill <beet>               Pflanze sofort ausgewachsen',
-    '  clear <beet>              Beet leeren',
-    '  plant <beet> <sorte>      Pflanzen, Unlock egal (moos, gras, bambus,',
-    '                            blume, ahorn, bonsai, lotus, sakura)',
-    '  clicks <wert>             Community-totalClicks setzen',
-    '  boost <sorte> <minuten>   Boost aktivieren (0 = aus)',
-    '  cooldown <spieler>        Cooldown eines Spielers zurücksetzen',
-    '  score <spieler> <punkte>  Doodle-Jump-Score setzen',
-    '  unscore <spieler>         Doodle-Jump-Eintrag löschen',
-    '  help                      diese Hilfe',
-  ].join('\n');
+  // ── styles ──────────────────────────────────────────────────────
+  const C = {
+    input: 'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;' +
+           'padding:7px 9px;color:#fff;font:12px Consolas,Menlo,monospace;outline:none;min-width:0',
+    btn:   'background:rgba(255,143,143,.12);border:1px solid rgba(255,143,143,.4);border-radius:8px;' +
+           'padding:7px 11px;color:#ffb4b4;font:12px Inter,sans-serif;cursor:pointer;white-space:nowrap',
+    row:   'display:flex;gap:6px;align-items:center;margin-bottom:7px',
+    head:  'margin:12px 0 6px;font:600 11px Inter,sans-serif;color:#8da3c8;text-transform:uppercase;letter-spacing:.1em',
+  };
 
-  function buildPanel() {
-    panel = document.createElement('div');
-    panel.style.cssText =
-      'position:fixed;left:14px;bottom:14px;z-index:9999;width:min(440px,calc(100vw - 28px));' +
-      'background:#0c1426;border:1px solid rgba(255,120,120,.5);border-radius:12px;padding:12px;' +
-      'font:12px/1.5 Consolas,Menlo,monospace;color:#d8e4ff;box-shadow:0 16px 40px rgba(0,0,0,.6)';
-    panel.innerHTML =
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
-      '<strong style="color:#ff8f8f">🛠 Cheat-Konsole (dev)</strong>' +
-      '<button id="cheatClose" style="background:none;border:none;color:#8da3c8;cursor:pointer;font-size:14px">✕</button></div>' +
-      '<pre id="cheatOut" style="margin:0 0 8px;max-height:200px;overflow:auto;white-space:pre-wrap;background:rgba(0,0,0,.3);border-radius:8px;padding:8px"></pre>' +
-      '<input id="cheatIn" placeholder="Befehl… (help)" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;' +
-      'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px 10px;color:#fff;font:inherit;outline:none">';
-    document.body.appendChild(panel);
-
-    panel.querySelector('#cheatClose').addEventListener('click', () => panel.remove() || (panel = null));
-    const input = panel.querySelector('#cheatIn');
-    input.addEventListener('keydown', e => {
-      if (e.key !== 'Enter') return;
-      const line = input.value.trim();
-      input.value = '';
-      if (line) run(line);
-    });
-    print(localStorage.getItem('cheat-token')
-      ? 'Bereit. "help" für Befehle.'
-      : 'Kein Token gesetzt — zuerst: token <wert>');
-    input.focus();
+  function el(tag, style, props = {}) {
+    const n = document.createElement(tag);
+    if (style) n.style.cssText = style;
+    Object.assign(n, props);
+    return n;
   }
 
-  function print(msg) {
-    const out = panel && panel.querySelector('#cheatOut');
-    if (!out) return;
-    out.textContent += (out.textContent ? '\n' : '') + msg;
-    out.scrollTop = out.scrollHeight;
+  function row(...children) {
+    const r = el('div', C.row);
+    children.forEach(c => r.appendChild(c));
+    return r;
   }
 
+  function head(text) { return el('div', C.head, { textContent: text }); }
+
+  // ── backend ─────────────────────────────────────────────────────
   async function post(body) {
     const token = localStorage.getItem('cheat-token') || '';
     const res = await fetch(apiBase + '/api/cheat', {
@@ -71,34 +48,160 @@
       body: JSON.stringify({ token, ...body }),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || res.status);
+    if (!res.ok) {
+      throw new Error(res.status === 404
+        ? 'Backend hat keinen CHEAT_TOKEN gesetzt (Compose: backend-dev).'
+        : data.error || res.status);
+    }
     return data;
   }
 
-  async function run(line) {
-    print('> ' + line);
-    const [cmd, ...args] = line.split(/\s+/);
+  function status(msg, ok) {
+    refs.status.textContent = (ok ? '✓ ' : '✗ ') + msg;
+    refs.status.style.color = ok ? '#3dffa0' : '#ff8f8f';
+  }
+
+  function run(body) {
+    post(body)
+      .then(r => { status(r.ok || 'ok', true); refreshState(); })
+      .catch(e => status(e.message, false));
+  }
+
+  async function refreshState() {
     try {
-      switch (cmd) {
-        case 'help': print(HELP); break;
-        case 'token':
-          localStorage.setItem('cheat-token', args[0] || '');
-          print('Token gespeichert.');
-          break;
-        case 'grow':     print((await post({ cmd, plot: +args[0], value: +args[1] })).ok); break;
-        case 'fill':
-        case 'clear':    print((await post({ cmd, plot: +args[0] })).ok); break;
-        case 'plant':    print((await post({ cmd, plot: +args[0], species: args[1] })).ok); break;
-        case 'clicks':   print((await post({ cmd, value: +args[0] })).ok); break;
-        case 'boost':    print((await post({ cmd, species: args[0], value: +args[1] })).ok); break;
-        case 'cooldown': print((await post({ cmd, player: args.join(' ') })).ok); break;
-        case 'score':    print((await post({ cmd, player: args.slice(0, -1).join(' '), value: +args[args.length - 1] })).ok); break;
-        case 'unscore':  print((await post({ cmd, player: args.join(' ') })).ok); break;
-        default: print('Unbekannter Befehl — "help" zeigt alle.');
+      gstate = await (await fetch(apiBase + '/api/state')).json();
+      fillSelectors();
+    } catch { /* Anzeige bleibt beim alten Stand */ }
+  }
+
+  function option(select, value, label) {
+    const o = el('option', '', { value, textContent: label });
+    o.style.background = '#0c1426';
+    select.appendChild(o);
+  }
+
+  function fillSelectors() {
+    if (!gstate || !panel) return;
+    const keepPlot = refs.plot.value, keepSp = refs.plantSpecies.value, keepBoost = refs.boostSpecies.value;
+
+    refs.plot.innerHTML = '';
+    gstate.plots.forEach((plot, i) => {
+      if (plot) {
+        const sp = gstate.species.find(s => s.id === plot.species);
+        option(refs.plot, i, `${i}: ${sp.emoji} ${sp.name} ${plot.growth}/${sp.growth}`);
+      } else {
+        option(refs.plot, i, `${i}: (leer)`);
       }
-    } catch (err) {
-      print('✗ ' + err.message);
-    }
+    });
+
+    refs.plantSpecies.innerHTML = '';
+    refs.boostSpecies.innerHTML = '';
+    gstate.species.forEach(sp => {
+      option(refs.plantSpecies, sp.id, `${sp.emoji} ${sp.name}`);
+      option(refs.boostSpecies, sp.id, `${sp.boost ? sp.boost.emoji : sp.emoji} ${sp.boost ? sp.boost.name : sp.name}`);
+    });
+
+    if (keepPlot) refs.plot.value = keepPlot;
+    if (keepSp) refs.plantSpecies.value = keepSp;
+    if (keepBoost) refs.boostSpecies.value = keepBoost;
+  }
+
+  // ── panel ───────────────────────────────────────────────────────
+  function buildPanel() {
+    panel = el('div',
+      'position:fixed;left:14px;bottom:14px;z-index:9999;width:min(400px,calc(100vw - 28px));' +
+      'max-height:min(75vh,640px);overflow-y:auto;background:#0c1426;border:1px solid rgba(255,120,120,.5);' +
+      'border-radius:14px;padding:14px;color:#d8e4ff;box-shadow:0 16px 40px rgba(0,0,0,.6)');
+
+    // header
+    const close = el('button', 'background:none;border:none;color:#8da3c8;cursor:pointer;font-size:15px', { textContent: '✕' });
+    close.addEventListener('click', () => { panel.remove(); panel = null; });
+    const title = el('strong', 'color:#ff8f8f;font:600 13px Inter,sans-serif', { textContent: '🛠 Cheats (dev)' });
+    panel.appendChild(row(title, el('span', 'flex:1'), close));
+
+    // token
+    refs.token = el('input', C.input + ';flex:1', {
+      type: 'password', placeholder: 'Cheat-Token',
+      value: localStorage.getItem('cheat-token') || '',
+    });
+    const saveTok = el('button', C.btn, { textContent: '💾' });
+    saveTok.addEventListener('click', () => {
+      localStorage.setItem('cheat-token', refs.token.value.trim());
+      status('Token gespeichert', true);
+    });
+    panel.appendChild(row(refs.token, saveTok));
+
+    // Beet
+    panel.appendChild(head('Beet'));
+    refs.plot = el('select', C.input + ';flex:1');
+    const reload = el('button', C.btn, { textContent: '↻', title: 'Neu laden' });
+    reload.addEventListener('click', refreshState);
+    panel.appendChild(row(refs.plot, reload));
+
+    const fill = el('button', C.btn + ';flex:1', { textContent: '✨ Ausgewachsen' });
+    fill.addEventListener('click', () => run({ cmd: 'fill', plot: +refs.plot.value }));
+    const clear = el('button', C.btn + ';flex:1', { textContent: '🗑 Leeren' });
+    clear.addEventListener('click', () => run({ cmd: 'clear', plot: +refs.plot.value }));
+    panel.appendChild(row(fill, clear));
+
+    refs.growth = el('input', C.input + ';flex:1', { type: 'number', min: 0, placeholder: 'Wachstum' });
+    const setGrowth = el('button', C.btn, { textContent: 'Setzen' });
+    setGrowth.addEventListener('click', () => run({ cmd: 'grow', plot: +refs.plot.value, value: +refs.growth.value }));
+    panel.appendChild(row(refs.growth, setGrowth));
+
+    refs.plantSpecies = el('select', C.input + ';flex:1');
+    const plant = el('button', C.btn, { textContent: '🌱 Pflanzen' });
+    plant.addEventListener('click', () => run({ cmd: 'plant', plot: +refs.plot.value, species: refs.plantSpecies.value }));
+    panel.appendChild(row(refs.plantSpecies, plant));
+
+    // Community
+    panel.appendChild(head('Community'));
+    refs.clicks = el('input', C.input + ';flex:1', { type: 'number', min: 0, placeholder: 'totalClicks' });
+    const setClicks = el('button', C.btn, { textContent: 'Setzen' });
+    setClicks.addEventListener('click', () => run({ cmd: 'clicks', value: +refs.clicks.value }));
+    panel.appendChild(row(refs.clicks, setClicks));
+
+    // Boost
+    panel.appendChild(head('Boost'));
+    refs.boostSpecies = el('select', C.input + ';flex:1');
+    refs.boostMin = el('input', C.input + ';width:70px', { type: 'number', min: 0, value: 60, title: 'Minuten' });
+    const boostOn = el('button', C.btn, { textContent: 'An' });
+    boostOn.addEventListener('click', () => run({ cmd: 'boost', species: refs.boostSpecies.value, value: +refs.boostMin.value }));
+    const boostOff = el('button', C.btn, { textContent: 'Aus' });
+    boostOff.addEventListener('click', () => run({ cmd: 'boost', species: refs.boostSpecies.value, value: 0 }));
+    panel.appendChild(row(refs.boostSpecies, refs.boostMin, boostOn, boostOff));
+
+    // Spieler
+    panel.appendChild(head('Spieler'));
+    refs.player = el('input', C.input + ';flex:1', {
+      placeholder: 'Name', value: localStorage.getItem('zen-name') || localStorage.getItem('doodle-name') || '',
+    });
+    const cd = el('button', C.btn, { textContent: '⏱ Cooldown weg' });
+    cd.addEventListener('click', () => run({ cmd: 'cooldown', player: refs.player.value.trim() }));
+    panel.appendChild(row(refs.player, cd));
+
+    // Doodle Jump
+    panel.appendChild(head('Doodle Jump Score'));
+    refs.scoreName = el('input', C.input + ';flex:1', {
+      placeholder: 'Name', value: localStorage.getItem('doodle-name') || '',
+    });
+    refs.scoreVal = el('input', C.input + ';width:80px', { type: 'number', placeholder: 'Punkte' });
+    const setScore = el('button', C.btn, { textContent: 'Setzen' });
+    setScore.addEventListener('click', () =>
+      run({ cmd: 'score', game: 'doodle-jump', player: refs.scoreName.value.trim(), value: +refs.scoreVal.value }));
+    const delScore = el('button', C.btn, { textContent: '🗑' , title: 'Eintrag löschen' });
+    delScore.addEventListener('click', () =>
+      run({ cmd: 'unscore', game: 'doodle-jump', player: refs.scoreName.value.trim() }));
+    panel.appendChild(row(refs.scoreName, refs.scoreVal, setScore, delScore));
+
+    // status line
+    refs.status = el('div', 'margin-top:10px;font:12px Consolas,Menlo,monospace;min-height:16px;color:#8da3c8', {
+      textContent: localStorage.getItem('cheat-token') ? 'Bereit.' : 'Zuerst Token eintragen und speichern.',
+    });
+    panel.appendChild(refs.status);
+
+    document.body.appendChild(panel);
+    refreshState();
   }
 
   function toggle() {
