@@ -80,6 +80,23 @@ const SPECIES = [
   { id: 'sakura', name: 'Kirschblüte',  emoji: '🌸', stages: ['🟤', '🌱', '🌳', '🌸'], growth: 25000, unlock: 300000 },
 ];
 
+// Every species has its own global boost: harvesting a fully grown plant
+// activates it FOR EVERYONE. Base duration 1 h; harvesting the same species
+// again extends it (capped 12 h ahead). Different types combine freely,
+// within the same type the strongest active boost wins.
+const BOOST_BASE_MS = 60 * 60 * 1000;
+const BOOST_CAP_MS = 12 * 60 * 60 * 1000;
+const BOOSTS = {
+  moos:   { name: 'Frisches Moos', emoji: '🍀', type: 'cooldown',   value: 40000, desc: 'Cooldown nur 40 s statt 60 s' },
+  gras:   { name: 'Pampas-Power',  emoji: '🌾', type: 'multiplier', value: 2,     desc: 'Gießen zählt doppelt (+2 Wachstum)' },
+  bambus: { name: 'Sprinkler',     emoji: '🎍', type: 'splash',     value: 1,     desc: 'Gießen bewässert zusätzlich eine zufällige Pflanze' },
+  blume:  { name: 'Glücksblüte',   emoji: '🌼', type: 'lucky',      value: 0.25,  desc: '25 % Chance: Klick ohne Cooldown' },
+  ahorn:  { name: 'Herbstwind',    emoji: '🍁', type: 'duration',   value: 2,     desc: 'Neu aktivierte Boosts halten 2 h statt 1 h' },
+  bonsai: { name: 'Erleuchtung',   emoji: '🌳', type: 'unlock',     value: 2,     desc: 'Klicks zählen doppelt für Freischaltungen' },
+  lotus:  { name: 'Monsun',        emoji: '🪷', type: 'rain',       value: 1,     desc: 'Alle Pflanzen wachsen +1 pro Minute' },
+  sakura: { name: 'Hanami',        emoji: '🌸', type: 'cooldown',   value: 0,     desc: 'Kein Cooldown!' },
+};
+
 // ── State ─────────────────────────────────────────────────────────
 let garden = {
   plots: Array(PLOT_COUNT).fill(null),   // { species, growth, plantedBy, plantedAt }
@@ -87,6 +104,7 @@ let garden = {
   harvestedTotal: 0,
   players: {},                           // name → { clicks, harvests, lastAction }
   log: [],                               // newest first
+  boosts: {},                            // speciesId → expiry timestamp (global!)
 };
 let dirty = false;
 const ipLast = new Map();
@@ -110,6 +128,19 @@ function saveGarden() {
   });
 }
 setInterval(saveGarden, 10 * 1000);
+
+// Monsun boost: every plant grows by itself once a minute while active.
+setInterval(() => {
+  if (!boostEffects().rain) return;
+  let changed = false;
+  for (const plot of garden.plots) {
+    if (plot && plot.growth < speciesById(plot.species).growth) {
+      growPlot(plot, 1, null);
+      changed = true;
+    }
+  }
+  if (changed) dirty = true;
+}, 60 * 1000);
 // SIGTERM is what Docker sends on stop/restart; SIGINT covers Ctrl+C.
 function shutdown() { try { fs.writeFileSync(DATA_FILE, JSON.stringify(garden, null, 2)); } catch {} process.exit(0); }
 process.on('SIGINT', shutdown);
@@ -123,11 +154,50 @@ function addLog(entry) {
   garden.log = garden.log.slice(0, LOG_MAX);
 }
 
+// Combined effect of all currently active boosts.
+function boostEffects(now = Date.now()) {
+  const eff = { cooldown: COOLDOWN_MS, mult: 1, splash: false, lucky: 0, durationX: 1, rain: false, unlockX: 1 };
+  for (const [id, until] of Object.entries(garden.boosts || {})) {
+    if (until <= now) continue;
+    const b = BOOSTS[id];
+    if (!b) continue;
+    if (b.type === 'cooldown')        eff.cooldown = Math.min(eff.cooldown, b.value);
+    else if (b.type === 'multiplier') eff.mult = Math.max(eff.mult, b.value);
+    else if (b.type === 'splash')     eff.splash = true;
+    else if (b.type === 'lucky')      eff.lucky = Math.max(eff.lucky, b.value);
+    else if (b.type === 'duration')   eff.durationX = Math.max(eff.durationX, b.value);
+    else if (b.type === 'rain')       eff.rain = true;
+    else if (b.type === 'unlock')     eff.unlockX = Math.max(eff.unlockX, b.value);
+  }
+  return eff;
+}
+
+// Grow a plot by `amount`, clamped at full growth; logs the bloom once.
+function growPlot(plot, amount, byPlayer) {
+  const sp = speciesById(plot.species);
+  const before = plot.growth;
+  plot.growth = Math.min(sp.growth, plot.growth + amount);
+  if (before < sp.growth && plot.growth >= sp.growth) {
+    addLog({ player: byPlayer || '🌧️', text: `${sp.name} ${sp.emoji} ist voll erblüht! ✨` });
+  }
+}
+
+// Sprinkler boost: watering also hits one random other unfinished plant.
+function waterRandomOther(exceptIdx, byPlayer) {
+  const candidates = garden.plots
+    .map((plot, i) => ({ plot, i }))
+    .filter(({ plot, i }) => plot && i !== exceptIdx && plot.growth < speciesById(plot.species).growth);
+  if (!candidates.length) return;
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  growPlot(pick.plot, 1, byPlayer);
+}
+
 function applyAction(player, action, plotIdx, speciesId) {
   const now = Date.now();
+  const eff = boostEffects(now);
   const p = garden.players[player] || (garden.players[player] = { clicks: 0, harvests: 0, lastAction: 0 });
 
-  const wait = p.lastAction + COOLDOWN_MS - now;
+  const wait = p.lastAction + eff.cooldown - now;
   if (wait > 0) return { error: 'cooldown', wait };
 
   if (!Number.isInteger(plotIdx) || plotIdx < 0 || plotIdx >= garden.plots.length) {
@@ -146,8 +216,8 @@ function applyAction(player, action, plotIdx, speciesId) {
     if (!plot) return { error: 'Hier wächst nichts.' };
     const sp = speciesById(plot.species);
     if (plot.growth >= sp.growth) return { error: 'Ausgewachsen — bereit zur Ernte!' };
-    plot.growth += 1;
-    if (plot.growth === sp.growth) addLog({ player, text: `${sp.name} ${sp.emoji} ist voll erblüht! ✨` });
+    growPlot(plot, eff.mult, player);
+    if (eff.splash) waterRandomOther(plotIdx, player);
   } else if (action === 'harvest') {
     if (!plot) return { error: 'Hier wächst nichts.' };
     const sp = speciesById(plot.species);
@@ -155,36 +225,48 @@ function applyAction(player, action, plotIdx, speciesId) {
     garden.plots[plotIdx] = null;
     garden.harvestedTotal += 1;
     p.harvests += 1;
-    addLog({ player, text: `hat ${sp.name} ${sp.emoji} geerntet 🙏` });
+    // Activate (or extend) this species' global boost for everyone
+    const boost = BOOSTS[sp.id];
+    const from = Math.max(garden.boosts[sp.id] || 0, now);
+    garden.boosts[sp.id] = Math.min(now + BOOST_CAP_MS, from + BOOST_BASE_MS * eff.durationX);
+    addLog({ player, text: `hat ${sp.name} ${sp.emoji} geerntet — Boost „${boost.name}" ${boost.emoji} für alle!` });
   } else {
     return { error: 'Unbekannte Aktion.' };
   }
 
   p.clicks += 1;
-  p.lastAction = now;
-  garden.totalClicks += 1;
+  // Glücksblüte: with some luck the action does not trigger a cooldown
+  const lucky = eff.lucky > 0 && Math.random() < eff.lucky;
+  if (!lucky) p.lastAction = now;
+  garden.totalClicks += eff.unlockX;
   dirty = true;
-  return { ok: true };
+  return { ok: true, lucky };
 }
 
 function stateFor(player) {
   const now = Date.now();
+  const eff = boostEffects(now);
   const me = player && garden.players[player];
   const top = Object.entries(garden.players)
     .map(([name, v]) => ({ name, clicks: v.clicks, harvests: v.harvests }))
     .sort((a, b) => b.clicks - a.clicks)
     .slice(0, 10);
+  const activeBoosts = Object.entries(garden.boosts || {})
+    .filter(([id, until]) => until > now && BOOSTS[id])
+    .map(([id, until]) => ({ species: id, until, ...BOOSTS[id] }))
+    .sort((a, b) => a.until - b.until);
   return {
-    species: SPECIES,
+    species: SPECIES.map(s => ({ ...s, boost: BOOSTS[s.id] })),
     plots: garden.plots,
     plotCount: garden.plots.length,
     totalClicks: garden.totalClicks,
     harvestedTotal: garden.harvestedTotal,
     top,
     log: garden.log,
+    boosts: activeBoosts,
     serverTime: now,
-    cooldownMs: COOLDOWN_MS,
-    waitMs: me ? Math.max(0, me.lastAction + COOLDOWN_MS - now) : 0,
+    cooldownMs: eff.cooldown,
+    waitMs: me ? Math.max(0, me.lastAction + eff.cooldown - now) : 0,
   };
 }
 
@@ -316,7 +398,7 @@ const server = http.createServer((req, res) => {
         return send(res, 429, { error: `Noch ${Math.ceil(result.wait / 1000)}s bis zum nächsten Klick.`, waitMs: result.wait, ...stateFor(player) });
       }
       if (result.error) return send(res, 400, { error: result.error, ...stateFor(player) });
-      return send(res, 200, stateFor(player));
+      return send(res, 200, { lucky: !!result.lucky, ...stateFor(player) });
     });
     return;
   }

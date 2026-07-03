@@ -37,11 +37,13 @@ async function sendAction(action, plot, species) {
     return;
   }
   try {
-    applyState(await api('/api/action', {
+    const data = await api('/api/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ player: playerName, action, plot, species }),
-    }));
+    });
+    applyState(data);
+    if (data.lucky) toast('🌼 Glücksblüte — dein Klick war gratis, kein Cooldown!');
   } catch (err) {
     if (err.data && err.data.plots) applyState(err.data);
     toast(err.message);
@@ -91,21 +93,26 @@ function render() {
     garden.appendChild(btn);
   });
 
-  // Species list with unlock state
+  // Species list with unlock state and each species' harvest boost
   const list = $('speciesList');
   list.innerHTML = '';
   state.species.forEach(sp => {
     const unlocked = state.totalClicks >= sp.unlock;
     const row = document.createElement('div');
     row.className = 'species-row' + (unlocked ? '' : ' locked');
+    const boostLine = unlocked && sp.boost
+      ? `<span class="sp-boost">Ernte-Boost „${esc(sp.boost.name)}": ${esc(sp.boost.desc)}</span>`
+      : '';
     row.innerHTML =
       `<span class="sp-emoji">${unlocked ? sp.emoji : '🔒'}</span>` +
-      `<span class="sp-name">${unlocked ? sp.name : '???'}</span>` +
+      `<span class="sp-main"><span class="sp-name">${unlocked ? sp.name : '???'}</span>${boostLine}</span>` +
       `<span class="sp-info">${unlocked
         ? `${sp.growth.toLocaleString('de-DE')} 💧`
         : `ab ${sp.unlock.toLocaleString('de-DE')} Klicks`}</span>`;
     list.appendChild(row);
   });
+
+  renderBoosts();
 
   // Community stats
   $('statClicks').textContent = state.totalClicks.toLocaleString('de-DE');
@@ -130,9 +137,34 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// ── Active global boosts ──────────────────────────────────────────
+function fmtRemaining(ms) {
+  const min = Math.ceil(ms / 60000);
+  if (min >= 60) return `${Math.floor(min / 60)} h ${min % 60 ? (min % 60) + ' min' : ''}`.trim();
+  return `${Math.max(1, min)} min`;
+}
+
+function renderBoosts() {
+  const bar = $('boostBar');
+  if (!bar) return;
+  const now = Date.now();
+  const active = (state && state.boosts || []).filter(b => b.until > now);
+  bar.classList.toggle('hidden', !active.length);
+  bar.innerHTML = active.map(b =>
+    `<span class="boost-chip" title="${esc(b.desc)}">` +
+    `${b.emoji} ${esc(b.name)}<span class="boost-time">${fmtRemaining(b.until - now)}</span></span>`
+  ).join('');
+}
+
 // ── Cooldown ticker ───────────────────────────────────────────────
+let lastBoostTick = 0;
 setInterval(() => {
   if (!state) return;
+  // refresh boost countdowns once a minute (they display minutes)
+  if (Date.now() - lastBoostTick > 60 * 1000) {
+    lastBoostTick = Date.now();
+    renderBoosts();
+  }
   const left = nextActionAt - Date.now();
   const fill = $('cooldownFill');
   const text = $('cooldownText');
