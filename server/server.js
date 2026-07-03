@@ -31,6 +31,12 @@ const FEEDBACK_TOKEN = process.env.FEEDBACK_TOKEN || '';
 const FEEDBACK_COOLDOWN_MS = 60 * 1000;
 const feedbackLast = new Map();      // ip → last submission ts (in-memory only)
 
+// Dev cheat console — the /api/cheat endpoint only exists while CHEAT_TOKEN
+// is set. Set it ONLY on the dev backend container, NEVER in production:
+// without the env var the endpoint is a plain 404, so this code is inert
+// even if it ships on master.
+const CHEAT_TOKEN = process.env.CHEAT_TOKEN || '';
+
 // Global highscores, one board per game (allowlist so nobody creates
 // arbitrary boards). Keeps each player's best score only.
 const SCORE_GAMES = ['doodle-jump'];
@@ -275,6 +281,80 @@ function cleanName(raw) {
   return /^[\w\däöüÄÖÜß .-]{2,20}$/.test(name) ? name : null;
 }
 
+// ── Cheat commands (dev only, see CHEAT_TOKEN above) ──────────────
+function applyCheat(b) {
+  const now = Date.now();
+  const idxOk = Number.isInteger(b.plot) && b.plot >= 0 && b.plot < garden.plots.length;
+  const plot = idxOk ? garden.plots[b.plot] : null;
+
+  switch (b.cmd) {
+    case 'grow': {
+      if (!plot) return { error: 'Beet leer oder ungültig.' };
+      const sp = speciesById(plot.species);
+      plot.growth = Math.max(0, Math.min(sp.growth, Math.round(Number(b.value) || 0)));
+      return { ok: `Beet ${b.plot}: ${sp.name} auf ${plot.growth}/${sp.growth}` };
+    }
+    case 'fill': {
+      if (!plot) return { error: 'Beet leer oder ungültig.' };
+      const sp = speciesById(plot.species);
+      plot.growth = sp.growth;
+      return { ok: `Beet ${b.plot}: ${sp.name} ausgewachsen — bereit zur Ernte` };
+    }
+    case 'clear': {
+      if (!idxOk) return { error: 'Ungültiges Beet.' };
+      garden.plots[b.plot] = null;
+      return { ok: `Beet ${b.plot} geleert` };
+    }
+    case 'plant': {
+      if (!idxOk) return { error: 'Ungültiges Beet.' };
+      const sp = speciesById(b.species);
+      if (!sp) return { error: `Unbekannte Sorte "${b.species}". Ids: ${SPECIES.map(s => s.id).join(', ')}` };
+      garden.plots[b.plot] = { species: sp.id, growth: 0, plantedBy: 'cheat', plantedAt: now };
+      return { ok: `Beet ${b.plot}: ${sp.name} gepflanzt (Unlock ignoriert)` };
+    }
+    case 'clicks': {
+      garden.totalClicks = Math.max(0, Math.round(Number(b.value) || 0));
+      return { ok: `totalClicks = ${garden.totalClicks}` };
+    }
+    case 'boost': {
+      if (!BOOSTS[b.species]) return { error: `Unbekannte Sorte "${b.species}".` };
+      const min = Math.round(Number(b.value) || 0);
+      if (min <= 0) { delete garden.boosts[b.species]; return { ok: `Boost ${b.species} deaktiviert` }; }
+      garden.boosts[b.species] = now + min * 60000;
+      return { ok: `Boost „${BOOSTS[b.species].name}" aktiv für ${min} min` };
+    }
+    case 'cooldown': {
+      const p = garden.players[b.player];
+      if (!p) return { error: `Spieler "${b.player}" unbekannt.` };
+      p.lastAction = 0;
+      return { ok: `Cooldown von ${b.player} zurückgesetzt` };
+    }
+    case 'score': {
+      const game = SCORE_GAMES.includes(b.game) ? b.game : SCORE_GAMES[0];
+      const name = String(b.player || '').trim().slice(0, 20);
+      if (name.length < 2) return { error: 'Name zu kurz.' };
+      const value = Math.round(Number(b.value) || 0);
+      const board = scores[game] || (scores[game] = []);
+      const existing = board.find(e => e.name === name);
+      if (existing) { existing.score = value; existing.ts = now; }
+      else board.push({ name, score: value, ts: now });
+      board.sort((a, z) => z.score - a.score);
+      scores[game] = board.slice(0, SCORE_MAX_ENTRIES);
+      saveScores();
+      return { ok: `${game}: ${name} = ${value}` };
+    }
+    case 'unscore': {
+      const game = SCORE_GAMES.includes(b.game) ? b.game : SCORE_GAMES[0];
+      const before = (scores[game] || []).length;
+      scores[game] = (scores[game] || []).filter(e => e.name !== String(b.player || ''));
+      saveScores();
+      return { ok: before === (scores[game] || []).length ? 'Nichts gelöscht.' : `${b.player} aus ${game} entfernt` };
+    }
+    default:
+      return { error: 'Unbekannter Befehl.' };
+  }
+}
+
 // ── HTTP server ───────────────────────────────────────────────────
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 
@@ -383,6 +463,23 @@ const server = http.createServer((req, res) => {
         .split('\n').filter(Boolean).map(l => JSON.parse(l)).reverse();
     } catch { /* no feedback yet */ }
     return send(res, 200, entries);
+  }
+
+  // Dev cheat console — 404 unless CHEAT_TOKEN is configured (never in prod)
+  if (url.pathname === '/api/cheat' && req.method === 'POST') {
+    if (!CHEAT_TOKEN) return send(res, 404, { error: 'Nicht gefunden.' });
+    let raw = '';
+    req.on('data', c => { raw += c; if (raw.length > 4096) req.destroy(); });
+    req.on('end', () => {
+      let body;
+      try { body = JSON.parse(raw); } catch { return send(res, 400, { error: 'Kaputtes JSON.' }); }
+      if (body.token !== CHEAT_TOKEN) return send(res, 403, { error: 'Falscher Token.' });
+      const result = applyCheat(body);
+      if (result.error) return send(res, 400, result);
+      dirty = true;
+      return send(res, 200, result);
+    });
+    return;
   }
 
   if (url.pathname === '/api/action' && req.method === 'POST') {

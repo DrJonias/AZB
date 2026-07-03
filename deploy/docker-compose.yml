@@ -96,6 +96,11 @@ services:
       - ./backend-data-dev:/data
     environment:
       - DATA_DIR=/data
+      # Schaltet die Cheat-Konsole frei (im Spiel: Ctrl+Alt+C bzw. 5× aufs
+      # Seiten-Icon tippen, dann einmal "token <wert>" eingeben).
+      # NUR HIER setzen — niemals beim Produktiv-Backend oben! Ohne die
+      # Variable ist /api/cheat ein 404, der Code auf master damit wirkungslos.
+      # - CHEAT_TOKEN=irgendein-langes-geheimnis
     command: >
       sh -c "
         while true; do

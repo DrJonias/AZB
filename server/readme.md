@@ -13,6 +13,24 @@ Historisch als Zen-Garden-Server gestartet, inzwischen zentral für alles Dynami
 
 Alle Daten liegen als JSON-Dateien in `DATA_DIR` (Default: dieser Ordner).
 
+## Cheat-Konsole (nur dev)
+
+Zum Testen gibt es `POST /api/cheat` (Pflanzen wachsen lassen, Boosts setzen,
+Scores manipulieren, …) plus ein Konsolen-Overlay in Zen Garden und Doodle Jump
+(`js/cheat.js`): öffnen mit **Ctrl+Alt+C** oder 5× schnell aufs Seiten-Icon
+tippen, dann `help` eingeben.
+
+Das ist doppelt merge-sicher — der Code darf auf master liegen, weil er dort
+wirkungslos ist:
+
+1. Der Endpoint existiert nur, wenn die Env-Variable `CHEAT_TOKEN` gesetzt ist
+   (**nur beim `backend-dev`-Container setzen, nie bei `backend`!**) — ohne sie
+   antwortet `/api/cheat` mit 404.
+2. Das Overlay aktiviert sich nur unter `/dev/` oder auf `localhost`.
+
+Erstbenutzung: Konsole öffnen und einmal `token <wert>` eingeben (der Wert aus
+der Compose-Datei); er wird im Browser gespeichert.
+
 ## Lokal starten
 
 ```
