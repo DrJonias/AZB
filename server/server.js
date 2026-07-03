@@ -20,7 +20,7 @@ const APP_DIR = path.resolve(__dirname, '..');
 
 const PLOT_COUNT = 24;   // divisible by 6/4/3 → the grid always shows full rows
 const COOLDOWN_MS = 60 * 1000;       // 1 action per player per minute
-const IP_THROTTLE_MS = 1000;         // basic request throttle per IP — matches Hanami's 1s floor below
+const IP_THROTTLE_MS = 1000;         // basic request throttle per IP
 const LOG_MAX = 15;
 
 // Anonymous site feedback — appended as JSON lines, one entry per line.
@@ -75,15 +75,19 @@ function submitScore(game, name, score) {
 // Growth = number of community waterings until fully grown.
 // Unlock = lifetime community clicks needed before the species can be planted.
 // Deliberately steep — the garden is meant to grow over months, not days.
+// The final species is a mystery: nobody knows what it is until someone
+// harvests it — then it reveals itself as a malicious weed that strangles
+// the whole garden and forces a fresh start (prestige +1, see applyAction).
 const SPECIES = [
-  { id: 'moos',   name: 'Moss',           emoji: '🍀', stages: ['🟤', '🌱', '🍀'],       growth: 30,    unlock: 0 },
-  { id: 'gras',   name: 'Pampas Grass',   emoji: '🌾', stages: ['🟤', '🌱', '🌾'],       growth: 80,    unlock: 0 },
-  { id: 'bambus', name: 'Bamboo',         emoji: '🎍', stages: ['🟤', '🌱', '🎋', '🎍'], growth: 250,   unlock: 300 },
-  { id: 'blume',  name: 'Chrysanthemum',  emoji: '🌼', stages: ['🟤', '🌱', '🌿', '🌼'], growth: 600,   unlock: 1500 },
-  { id: 'ahorn',  name: 'Japanese Maple', emoji: '🍁', stages: ['🟤', '🌱', '🌿', '🍁'], growth: 1500,  unlock: 6000 },
-  { id: 'bonsai', name: 'Bonsai',         emoji: '🌳', stages: ['🟤', '🌱', '🪴', '🌳'], growth: 4000,  unlock: 25000 },
-  { id: 'lotus',  name: 'Lotus',          emoji: '🪷', stages: ['🟤', '🌱', '🌿', '🪷'], growth: 10000, unlock: 90000 },
-  { id: 'sakura', name: 'Cherry Blossom', emoji: '🌸', stages: ['🟤', '🌱', '🌳', '🌸'], growth: 25000, unlock: 300000 },
+  { id: 'moos',    name: 'Moss',           emoji: '🍀', stages: ['🟤', '🌱', '🍀'],       growth: 30,    unlock: 0 },
+  { id: 'gras',    name: 'Pampas Grass',   emoji: '🌾', stages: ['🟤', '🌱', '🌾'],       growth: 80,    unlock: 0 },
+  { id: 'bambus',  name: 'Bamboo',         emoji: '🎍', stages: ['🟤', '🌱', '🎋', '🎍'], growth: 250,   unlock: 300 },
+  { id: 'blume',   name: 'Chrysanthemum',  emoji: '🌼', stages: ['🟤', '🌱', '🌿', '🌼'], growth: 600,   unlock: 1500 },
+  { id: 'ahorn',   name: 'Japanese Maple', emoji: '🍁', stages: ['🟤', '🌱', '🌿', '🍁'], growth: 1500,  unlock: 6000 },
+  { id: 'bonsai',  name: 'Bonsai',         emoji: '🌳', stages: ['🟤', '🌱', '🪴', '🌳'], growth: 4000,  unlock: 25000 },
+  { id: 'lotus',   name: 'Lotus',          emoji: '🪷', stages: ['🟤', '🌱', '🌿', '🪷'], growth: 10000, unlock: 90000 },
+  { id: 'mystery', name: '???',            emoji: '❓', stages: ['🟤', '🌱', '🌿', '❓'], growth: 25000, unlock: 300000,
+    hint: 'Nobody knows what grows here. Surely something wonderful…' },
 ];
 
 // Every species has its own global boost: harvesting a fully grown plant
@@ -99,7 +103,7 @@ const BOOSTS = {
   ahorn:  { name: 'Autumn Wind',   emoji: '🍁', type: 'reseed',       value: 0.02, maxLevel: 25, desc: '+2 % chance per level that a harvested plant re-seeds itself (50 % at level 25)' },
   bonsai: { name: 'Enlightenment', emoji: '🌳', type: 'unlock',       value: 2,    desc: 'Clicks count double towards unlocks' },
   lotus:  { name: 'Monsoon',       emoji: '🪷', type: 'rain',         value: 1,    desc: 'All plants grow +1 per minute' },
-  sakura: { name: 'Hanami',        emoji: '🌸', type: 'cooldown',     value: 1000, desc: 'Cooldown only 1 second' },
+  // 'mystery' has no boost on purpose — harvesting it triggers the prestige reset.
 };
 
 // Effective level: stored level clamped to the boost's cap (if any).
@@ -117,6 +121,7 @@ let garden = {
   players: {},                           // name → { clicks, harvests, lastAction }
   log: [],                               // newest first
   boosts: {},                            // speciesId → boost level (permanent, global!)
+  prestige: 0,                           // how often the mystery weed has reset the garden
 };
 let dirty = false;
 const ipLast = new Map();
@@ -129,12 +134,17 @@ function loadGarden() {
     while (garden.plots.length < PLOT_COUNT) garden.plots.push(null);
     // Migrate pre-permanent boosts, which stored expiry timestamps instead of
     // levels: a still-active boost becomes level 1, expired ones are dropped.
+    // (Also drops the removed Hanami/sakura boost.)
     for (const [id, v] of Object.entries(garden.boosts || {})) {
       if (!BOOSTS[id]) delete garden.boosts[id];
       else if (v > 1e12) {
         if (v > Date.now()) garden.boosts[id] = 1;
         else delete garden.boosts[id];
       }
+    }
+    // The former Cherry Blossom is now the mystery plant.
+    for (const plot of garden.plots) {
+      if (plot && plot.species === 'sakura') plot.species = 'mystery';
     }
   } catch {
     /* first start — empty garden */
@@ -183,7 +193,6 @@ function boostEffects() {
     const level = boostLevel(id);
     if (!b || level < 1) continue;
     if (b.type === 'cooldownStep')    eff.cooldown = Math.min(eff.cooldown, Math.max(MIN_COOLDOWN_MS, COOLDOWN_MS - level * b.value));
-    else if (b.type === 'cooldown')   eff.cooldown = Math.min(eff.cooldown, b.value);
     else if (b.type === 'multiplier') eff.mult = Math.max(eff.mult, b.value);
     else if (b.type === 'splash')     eff.splash = true;
     else if (b.type === 'lucky')      eff.lucky = Math.max(eff.lucky, b.value);
@@ -218,6 +227,7 @@ function applyAction(player, action, plotIdx, speciesId) {
   const now = Date.now();
   const eff = boostEffects();
   const p = garden.players[player] || (garden.players[player] = { clicks: 0, harvests: 0, lastAction: 0 });
+  let prestigeReset = false;
 
   const wait = p.lastAction + eff.cooldown - now;
   if (wait > 0) return { error: 'cooldown', wait };
@@ -247,14 +257,21 @@ function applyAction(player, action, plotIdx, speciesId) {
     garden.plots[plotIdx] = null;
     garden.harvestedTotal += 1;
     p.harvests += 1;
-    // Raise this species' permanent global boost by one level
-    const boost = BOOSTS[sp.id];
-    garden.boosts[sp.id] = (garden.boosts[sp.id] || 0) + 1;
-    addLog({ player, text: `harvested ${sp.name} ${sp.emoji} — "${boost.name}" ${boost.emoji} is now level ${boostLevel(sp.id)}!` });
-    // Autumn Wind: chance that the harvested plant re-seeds itself right away
-    if (eff.reseed > 0 && Math.random() < eff.reseed) {
-      garden.plots[plotIdx] = { species: sp.id, growth: 0, plantedBy: '🍁 wind', plantedAt: now };
-      addLog({ player: '🍁', text: `the autumn wind re-seeded ${sp.name} ${sp.emoji}!` });
+    if (sp.id === 'mystery') {
+      // The moment of truth — the actual reset happens below, after the
+      // common bookkeeping, so nothing overwrites the fresh start.
+      prestigeReset = true;
+      addLog({ player, text: `harvested the mysterious ${sp.emoji} plant…` });
+    } else {
+      // Raise this species' permanent global boost by one level
+      const boost = BOOSTS[sp.id];
+      garden.boosts[sp.id] = (garden.boosts[sp.id] || 0) + 1;
+      addLog({ player, text: `harvested ${sp.name} ${sp.emoji} — "${boost.name}" ${boost.emoji} is now level ${boostLevel(sp.id)}!` });
+      // Autumn Wind: chance that the harvested plant re-seeds itself right away
+      if (eff.reseed > 0 && Math.random() < eff.reseed) {
+        garden.plots[plotIdx] = { species: sp.id, growth: 0, plantedBy: '🍁 wind', plantedAt: now };
+        addLog({ player: '🍁', text: `the autumn wind re-seeded ${sp.name} ${sp.emoji}!` });
+      }
     }
   } else {
     return { error: 'Unknown action.' };
@@ -265,6 +282,18 @@ function applyAction(player, action, plotIdx, speciesId) {
   const lucky = eff.lucky > 0 && Math.random() < eff.lucky;
   if (!lucky) p.lastAction = now;
   garden.totalClicks += eff.unlockX;
+
+  // The mystery plant reveals itself as a malicious weed: its roots strangle
+  // the whole garden. Plots, unlocks and boost levels start from scratch —
+  // only the players' personal stats and the prestige counter survive.
+  if (prestigeReset) {
+    garden.prestige = (garden.prestige || 0) + 1;
+    garden.plots = Array(PLOT_COUNT).fill(null);
+    garden.totalClicks = 0;
+    garden.boosts = {};
+    addLog({ player: '🥀', text: `the ??? was a malicious weed! It strangled the whole garden — everything begins anew. Prestige ${garden.prestige} 🌱` });
+  }
+
   dirty = true;
   return { ok: true, lucky };
 }
@@ -290,6 +319,7 @@ function stateFor(player) {
     top,
     log: garden.log,
     boosts: activeBoosts,
+    prestige: garden.prestige || 0,
     serverTime: now,
     cooldownMs: eff.cooldown,
     waitMs: me ? Math.max(0, me.lastAction + eff.cooldown - now) : 0,

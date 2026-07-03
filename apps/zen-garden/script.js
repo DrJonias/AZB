@@ -51,9 +51,13 @@ async function sendAction(action, plot, species) {
 }
 
 function applyState(data) {
+  const prevPrestige = state ? (state.prestige || 0) : (data.prestige || 0);
   state = data;
   nextActionAt = Date.now() + (data.waitMs || 0);
   render();
+  if ((data.prestige || 0) > prevPrestige) {
+    toast(`🥀 The ??? was a malicious weed! It strangled the whole garden — everything begins anew. Prestige ${data.prestige} 🌱`, 12000);
+  }
 }
 
 // ── Rendering ─────────────────────────────────────────────────────
@@ -102,6 +106,8 @@ function render() {
     row.className = 'species-row' + (unlocked ? '' : ' locked');
     const boostLine = unlocked && sp.boost
       ? `<span class="sp-boost">Harvest boost “${esc(sp.boost.name)}”: ${esc(sp.boost.desc)}</span>`
+      : unlocked && sp.hint
+      ? `<span class="sp-boost">${esc(sp.hint)}</span>`
       : '';
     row.innerHTML =
       `<span class="sp-emoji">${unlocked ? sp.emoji : '🔒'}</span>` +
@@ -114,9 +120,11 @@ function render() {
 
   renderBoosts();
 
-  // Community stats
+  // Community stats — prestige stays hidden until the first garden reset
   $('statClicks').textContent = state.totalClicks.toLocaleString('en-US');
   $('statHarvest').textContent = state.harvestedTotal.toLocaleString('en-US');
+  $('statPrestigeWrap').classList.toggle('hidden', !(state.prestige > 0));
+  $('statPrestige').textContent = state.prestige || 0;
 
   const next = state.species.find(sp => state.totalClicks < sp.unlock);
   $('unlockProgress').innerHTML = next
@@ -193,12 +201,12 @@ function closePicker() { $('picker').classList.add('hidden'); pickerPlot = null;
 
 // ── Toast ─────────────────────────────────────────────────────────
 let toastTimer = null;
-function toast(msg) {
+function toast(msg, ms = 3000) {
   const el = $('toast');
   el.textContent = msg;
   el.classList.remove('hidden');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), ms);
 }
 
 // ── Setup ─────────────────────────────────────────────────────────

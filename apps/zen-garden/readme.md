@@ -15,7 +15,11 @@ Locally, start with `node server/server.js` in the repo root, then open
 - Click an empty plot → plant a species
 - Click a plant → water it (+1 growth)
 - Click a fully grown plant → harvest it (plot becomes free again) — **this levels up that species' boost for everyone!**
-- New species unlock by community total clicks (up to 300,000 for Cherry Blossom)
+- New species unlock by community total clicks (up to 300,000 for the final one)
+- The final species is a **mystery** — nobody knows what it is until someone
+  harvests it. Spoiler (don't read this): it is a malicious weed that strangles
+  the whole garden. Plots, unlocks and boost levels reset, and the community's
+  **prestige counter** goes up by one.
 
 ## Harvest boosts
 
@@ -34,4 +38,4 @@ community has harvested that species.
 | 🍁 Japanese Maple | Autumn Wind | +2% chance per level that a harvested plant re-seeds itself (50% at level 25) |
 | 🌳 Bonsai | Enlightenment | clicks count double for unlocks |
 | 🪷 Lotus | Monsoon | all plants grow +1 per minute |
-| 🌸 Cherry Blossom | Hanami | cooldown only 1 second |
+| ❓ ??? | — | no boost: harvesting it triggers the prestige reset |

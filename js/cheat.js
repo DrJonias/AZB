@@ -97,7 +97,7 @@
     refs.boostSpecies.innerHTML = '';
     gstate.species.forEach(sp => {
       option(refs.plantSpecies, sp.id, `${sp.emoji} ${sp.name}`);
-      option(refs.boostSpecies, sp.id, `${sp.boost ? sp.boost.emoji : sp.emoji} ${sp.boost ? sp.boost.name : sp.name}`);
+      if (sp.boost) option(refs.boostSpecies, sp.id, `${sp.boost.emoji} ${sp.boost.name}`);
     });
 
     if (keepPlot) refs.plot.value = keepPlot;
