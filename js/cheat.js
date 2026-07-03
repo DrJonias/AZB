@@ -212,7 +212,7 @@
     if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'c') { e.preventDefault(); toggle(); }
   });
 
-  // Mobil: 5× schnell auf das Seiten-Icon tippen
+  // Mobile: tap the page icon 5× quickly
   const icon = document.querySelector('.page-icon');
   if (icon) {
     let taps = 0, timer = null;

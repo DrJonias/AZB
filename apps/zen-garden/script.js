@@ -182,7 +182,7 @@ setInterval(() => {
 // ── Species picker ────────────────────────────────────────────────
 function openPicker(plotIdx) {
   if (Date.now() < nextActionAt) {
-    toast(`Noch ${Math.ceil((nextActionAt - Date.now()) / 1000)}s Geduld 🧘`);
+    toast(`${Math.ceil((nextActionAt - Date.now()) / 1000)}s left, patience 🧘`);
     return;
   }
   pickerPlot = plotIdx;

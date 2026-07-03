@@ -1,22 +1,22 @@
 version: '3'
 
-# Deploy-Vorlage fürs NAS. Ordnerstruktur neben dieser Datei:
-#   ./site              master-Checkout  (legt der webhook-Container selbst an)
-#   ./site-dev          dev-Checkout     (dito)
-#   ./backend-data      Daten Produktion (garden-data.json, scores.json, feedback.jsonl)
-#   ./backend-data-dev  Daten Dev
+# Deploy template for the NAS. Folder structure next to this file:
+#   ./site              master checkout  (the webhook container creates it itself)
+#   ./site-dev          dev checkout      (same)
+#   ./backend-data      production data (garden-data.json, scores.json, feedback.jsonl)
+#   ./backend-data-dev  dev data
 #
-# Alles deployt sich von selbst: webhook pullt jede Minute, die Backend-
-# Container starten ihren node-Prozess spätestens alle 5 Minuten neu, und
-# nginx lädt seine Config (kommt direkt aus dem Checkout, siehe unten) auf
-# demselben Rhythmus neu. Diese Compose-Datei muss nur angefasst werden,
-# wenn sich die Container-Topologie selbst ändert (neuer Service, anderer
-# Port) — sonst reicht ein "git push".
+# Everything deploys itself: the webhook pulls every minute, the backend
+# containers restart their node process at least every 5 minutes, and
+# nginx reloads its config (comes straight from the checkout, see below) on
+# the same rhythm. This compose file only needs to be touched
+# when the container topology itself changes (new service, different
+# port) — otherwise a "git push" is enough.
 #
-# Achtung beim allerersten "up" auf einem leeren NAS-Ordner: ./site und
-# ./site-dev müssen als (leere) Ordner bereits existieren, sonst schlagen
-# die Bind-Mounts fehl (Docker legt fehlende Mount-Quellen nicht selbst an).
-# mkdir -p site site-dev backend-data backend-data-dev vor dem ersten Start.
+# Watch out on the very first "up" on an empty NAS folder: ./site and
+# ./site-dev must already exist as (empty) folders, otherwise
+# the bind mounts fail (Docker doesn't create missing mount sources itself).
+# mkdir -p site site-dev backend-data backend-data-dev before the first start.
 
 services:
   web:
@@ -27,16 +27,16 @@ services:
       - "8080:80"
     volumes:
       - ./site:/usr/share/nginx/html:ro
-      # dev-Checkout als Unterordner /dev im Webroot — so greifen alle
-      # Location-Regeln (Cache-Header, Dotfile-Block) automatisch auch dort
+      # dev checkout as subfolder /dev in the webroot — this way all
+      # location rules (cache headers, dotfile block) apply there automatically too
       - ./site-dev:/usr/share/nginx/html/dev:ro
-      # Config kommt direkt aus dem master-Checkout (nicht aus site-dev —
-      # dieselbe Datei bedient ohnehin beide Umgebungen) und zieht sich so
-      # bei jedem webhook-Pull automatisch nach.
+      # Config comes straight from the master checkout (not from site-dev —
+      # the same file serves both environments anyway) and gets pulled in
+      # automatically with every webhook pull.
       - ./site/deploy/nginx:/etc/nginx/conf.d:ro
     command: sh -c "while :; do sleep 300; nginx -s reload; done & exec nginx -g 'daemon off;'"
 
-  # Hält ./site (master) und ./site-dev (dev) per git pull aktuell
+  # Keeps ./site (master) and ./site-dev (dev) up to date via git pull
   webhook:
     image: alpine/git
     container_name: azb-webhook
@@ -61,10 +61,10 @@ services:
         done
       "
 
-  # Produktiv-Backend (Zen Garden, Highscores, Feedback) — läuft direkt aus
-  # dem git-Checkout, kein eigenes Image nötig. Der node-Prozess wird
-  # spätestens alle 5 Minuten neu gestartet und übernimmt so automatisch
-  # Code-Änderungen aus dem Pull.
+  # Production backend (Zen Garden, highscores, feedback) — runs directly from
+  # the git checkout, no own image needed. The node process gets
+  # restarted at least every 5 minutes and so automatically picks up
+  # code changes from the pull.
   backend:
     image: node:20-alpine
     container_name: azb-backend
@@ -74,9 +74,9 @@ services:
       - ./backend-data:/data
     environment:
       - DATA_DIR=/data
-      # Optional: Token setzen, um Feedback im Browser zu lesen unter
-      # https://<domain>/api/feedback?token=<wert>
-      # - FEEDBACK_TOKEN=irgendein-langes-geheimnis
+      # Optional: set a token to read feedback in the browser at
+      # https://<domain>/api/feedback?token=<value>
+      # - FEEDBACK_TOKEN=some-long-secret
     command: >
       sh -c "
         while true; do
@@ -85,8 +85,8 @@ services:
         done
       "
 
-  # Getrenntes Dev-Backend mit eigenem Datenordner — gleiche Mechanik,
-  # läuft aus dem dev-Checkout. Erreichbar über /dev/api/ (nginx-Proxy).
+  # Separate dev backend with its own data folder — same mechanism,
+  # runs from the dev checkout. Reachable via /dev/api/ (nginx proxy).
   backend-dev:
     image: node:20-alpine
     container_name: azb-backend-dev
@@ -96,11 +96,11 @@ services:
       - ./backend-data-dev:/data
     environment:
       - DATA_DIR=/data
-      # Schaltet die Cheat-Konsole frei (im Spiel: Ctrl+Alt+C bzw. 5× aufs
-      # Seiten-Icon tippen, dann einmal "token <wert>" eingeben).
-      # NUR HIER setzen — niemals beim Produktiv-Backend oben! Ohne die
-      # Variable ist /api/cheat ein 404, der Code auf master damit wirkungslos.
-      # - CHEAT_TOKEN=irgendein-langes-geheimnis
+      # Enables the cheat console (in the game: Ctrl+Alt+C or tap the page
+      # icon 5× and then enter "token <value>" once).
+      # SET ONLY HERE — never on the production backend above! Without the
+      # variable /api/cheat is a 404, making the code on master a no-op.
+      # - CHEAT_TOKEN=some-long-secret
     command: >
       sh -c "
         while true; do

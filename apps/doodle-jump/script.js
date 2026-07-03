@@ -265,7 +265,7 @@ async function submitScore() {
     $('submitRow').classList.add('hidden');
     renderBoard(data.scores || [], name);
   } catch (err) {
-    $('submitStatus').textContent = 'Fehler: ' + err.message;
+    $('submitStatus').textContent = 'Error: ' + err.message;
   }
 }
 

@@ -241,7 +241,7 @@ function applyAction(player, action, plotIdx, speciesId) {
   }
 
   p.clicks += 1;
-  // Glücksblüte: with some luck the action does not trigger a cooldown
+  // Lucky Bloom: with some luck the action does not trigger a cooldown
   const lucky = eff.lucky > 0 && Math.random() < eff.lucky;
   if (!lucky) p.lastAction = now;
   garden.totalClicks += eff.unlockX;
@@ -445,14 +445,14 @@ const server = http.createServer((req, res) => {
       const entry = { ts: new Date().toISOString(), page: String(body.page || '').slice(0, 200), text };
       feedbackLast.set(ip, Date.now());
       fs.appendFile(FEEDBACK_FILE, JSON.stringify(entry) + '\n', err => {
-        if (err) return send(res, 500, { error: 'Speichern fehlgeschlagen.' });
+        if (err) return send(res, 500, { error: 'Failed to save.' });
         send(res, 200, { ok: true });
       });
     });
     return;
   }
 
-  // Feedback einsehen — nur wenn FEEDBACK_TOKEN als Env-Variable gesetzt ist.
+  // View feedback — only when FEEDBACK_TOKEN is set as an env variable.
   if (url.pathname === '/api/feedback' && req.method === 'GET') {
     if (!FEEDBACK_TOKEN || url.searchParams.get('token') !== FEEDBACK_TOKEN) {
       return send(res, 404, { error: 'Not found.' });
