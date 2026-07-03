@@ -291,15 +291,54 @@ canvas.addEventListener('touchstart', e => { e.preventDefault(); touchDir = touc
 canvas.addEventListener('touchmove',  e => { e.preventDefault(); touchDir = touchXDir(e); }, { passive: false });
 canvas.addEventListener('touchend',   e => { e.preventDefault(); if (!e.touches.length) touchDir = 0; }, { passive: false });
 
-// tilt (where the browser allows it without an extra permission prompt)
-window.addEventListener('deviceorientation', e => {
-  if (e.gamma === null) return;
-  tiltDir = Math.abs(e.gamma) < 4 ? 0 : Math.max(-1, Math.min(1, e.gamma / 20));
-});
+// ── Tilt controls ─────────────────────────────────────────────────
+// iOS (13+) only delivers deviceorientation events after an explicit
+// requestPermission() call, and that call is only allowed inside a user
+// gesture — so we hook it into the start button tap. Android needs no
+// permission; there the listener just works.
+let tiltEnabled = false;
+
+function onTilt(e) {
+  if (e.gamma === null || e.beta === null) return;
+  // Map the tilt axis to the current screen rotation: in portrait the
+  // left/right axis is gamma, in landscape it is beta (with flipped sign
+  // on the "other" landscape side).
+  let angle = 0;
+  if (screen.orientation && typeof screen.orientation.angle === 'number') {
+    angle = screen.orientation.angle;
+  } else if (typeof window.orientation === 'number') {
+    angle = window.orientation;
+  }
+  let g;
+  if (angle === 90) g = e.beta;
+  else if (angle === -90 || angle === 270) g = -e.beta;
+  else if (angle === 180) g = -e.gamma;
+  else g = e.gamma;
+
+  tiltDir = Math.abs(g) < 3 ? 0 : Math.max(-1, Math.min(1, g / 18));
+}
+
+function enableTilt() {
+  if (tiltEnabled) return;
+  const DOE = window.DeviceOrientationEvent;
+  if (!DOE) return;
+  if (typeof DOE.requestPermission === 'function') {
+    // iOS: must be called synchronously from the tap on "Los geht's"
+    DOE.requestPermission().then(res => {
+      if (res === 'granted') {
+        window.addEventListener('deviceorientation', onTilt);
+        tiltEnabled = true;
+      }
+    }).catch(() => {});
+  } else {
+    window.addEventListener('deviceorientation', onTilt);
+    tiltEnabled = true;
+  }
+}
 
 // ── Wire up ───────────────────────────────────────────────────────
-$('startBtn').addEventListener('click', startGame);
-$('retryBtn').addEventListener('click', startGame);
+$('startBtn').addEventListener('click', () => { enableTilt(); startGame(); });
+$('retryBtn').addEventListener('click', () => { enableTilt(); startGame(); });
 $('submitBtn').addEventListener('click', submitScore);
 $('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitScore(); });
 
