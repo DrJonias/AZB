@@ -1,5 +1,5 @@
 /* globals Matter */
-const { Engine, Render, Runner, World, Bodies, Body, Events, Query, Constraint } = Matter;
+const { Engine, Render, World, Bodies, Body, Events, Query, Constraint } = Matter;
 
 const CW = 900, CH = 560, WALL_T = 40;
 const MARBLE_R = 14, TRAIL_MAX = 35;
@@ -51,7 +51,7 @@ const TOOLS = [
     create(p, a) {
       return Bodies.rectangle(p.x, p.y, 200, 12, {
         chamfer: { radius: 5 }, angle: a,
-        isStatic: false, density: 0.003, friction: 0.55, frictionAir: 0.01,
+        isStatic: false, density: 0.003, friction: 0.55, frictionAir: 0.0025,
         restitution: 0.25, label: 'linie', render: fill('#f5a623'),
       });
     },
@@ -68,7 +68,7 @@ const TOOLS = [
       const right = Bodies.rectangle(p.x + W/2, p.y,          wT, wH,         { render: r });
       const body = Body.create({
         parts: [floor, left, right],
-        isStatic: false, density: 0.004, friction: 0.5, frictionAir: 0.01,
+        isStatic: false, density: 0.004, friction: 0.5, frictionAir: 0.0025,
         restitution: 0.2, label: 'bruecke',
       });
       Body.setAngle(body, a);
@@ -95,7 +95,7 @@ const TOOLS = [
       const bot = Bodies.rectangle(p.x, p.y + half, pW, rH, { chamfer: { radius: 4 }, render: r });
       const body = Body.create({
         parts: [top, bot],
-        isStatic: false, density: 0.004, friction: 0.3, frictionAir: 0.01,
+        isStatic: false, density: 0.004, friction: 0.3, frictionAir: 0.0025,
         restitution: 0.2, label: 'rohr',
       });
       Body.setAngle(body, a);
@@ -116,7 +116,7 @@ const TOOLS = [
     create(p) {
       return Bodies.rectangle(p.x, p.y, 110, 14, {
         chamfer: { radius: 6 },
-        isStatic: false, density: 0.003, friction: 0.05, frictionAir: 0.01,
+        isStatic: false, density: 0.003, friction: 0.05, frictionAir: 0.0025,
         restitution: 0.05,  // bounce handled by collision event, not built-in restitution
         label: 'trampolin', render: fill('#ff5e7e'),
       });
@@ -166,7 +166,7 @@ const TOOLS = [
 ];
 
 // ── State ─────────────────────────────────────────────────────────
-let engine, render, runner;
+let engine, render;
 let marble = null;
 let trailPoints = [];
 let placedBodies = [];
@@ -185,6 +185,14 @@ let nailPins = [];            // { nail, body, constraint } — nails pinned ont
 
 const BASE_GRAVITY = 1.3;
 
+// Physics runs in SUBSTEPS smaller steps per display frame — a fast marble
+// otherwise moves so far in one step that it skips straight through thin
+// boards (tunneling). Velocities are in px per substep. MAX_SPEED is a hard
+// cap (px/substep) so even trampoline chains can't reach tunneling speeds.
+const FRAME_MS = 1000 / 60;
+const SUBSTEPS = 4;
+const MAX_SPEED = 16;
+
 // ── Bootstrap ─────────────────────────────────────────────────────
 function init() {
   engine = Engine.create();
@@ -195,7 +203,6 @@ function init() {
     canvas, engine,
     options: { width: CW, height: CH, wireframes: false, background: '#0f0c24' },
   });
-  runner = Runner.create();
 
   // Boundaries — floor is slightly visible, side walls are invisible
   const floorOpts = {
@@ -214,7 +221,7 @@ function init() {
   Events.on(engine, 'collisionStart', handleCollisions);
   Events.on(render, 'afterRender', afterRender);
   Render.run(render);
-  Runner.run(runner, engine);
+  startLoop();
 
   buildPalette();
   setupEvents(canvas);
@@ -224,6 +231,32 @@ function init() {
   document.getElementById('freezeBtn').onclick      = toggleFreeze;
   document.getElementById('rotateLeftBtn').onclick  = () => rotateSelection(-1);
   document.getElementById('rotateRightBtn').onclick = () => rotateSelection(1);
+}
+
+// Fixed-timestep loop replacing Matter.Runner: each display frame advances
+// the engine in SUBSTEPS small steps (see comment at the constants above).
+function startLoop() {
+  let last = 0, acc = 0;
+  requestAnimationFrame(function loop(t) {
+    requestAnimationFrame(loop);
+    if (last) {
+      acc = Math.min(acc + (t - last), 100);   // clamp after tab switches
+      while (acc >= FRAME_MS) {
+        for (let i = 0; i < SUBSTEPS; i++) Engine.update(engine, FRAME_MS / SUBSTEPS);
+        afterFrame();
+        acc -= FRAME_MS;
+      }
+    }
+    last = t;
+  });
+}
+
+// Once per display frame (not per substep): trail recording and fall check.
+function afterFrame() {
+  if (!marble) return;
+  trailPoints.push({ x: marble.position.x, y: marble.position.y });
+  if (trailPoints.length > TRAIL_MAX) trailPoints.shift();
+  if (marble.position.y > CH + 80) resetBall();
 }
 
 // Rotate the placement ghost (when a tool is selected) or the last-grabbed body.
@@ -240,7 +273,7 @@ function rotateSelection(dir) {
 // ── Marble ────────────────────────────────────────────────────────
 function addMarble() {
   marble = Bodies.circle(MARBLE_X, MARBLE_Y, MARBLE_R, {
-    restitution: 0.45, friction: 0.06, frictionAir: 0.004, density: 0.003,
+    restitution: 0.45, friction: 0.06, frictionAir: 0.001, density: 0.003,
     label: 'marble',
     render: { fillStyle: '#ffd700', strokeStyle: '#ffaa00', lineWidth: 2 },
   });
@@ -296,11 +329,8 @@ function toggleFreeze() {
   btn.classList.toggle('frozen', isFrozen);
 }
 
-// ── Physics tick ──────────────────────────────────────────────────
+// ── Physics tick (runs once per substep) ──────────────────────────
 function afterUpdate() {
-  fanSpin = (fanSpin + 0.16) % (Math.PI * 2);
-  frameTick++;
-
   const dynamicPlaced = placedBodies.filter(b => !b.isStatic);
   const targets = marble ? [...dynamicPlaced, marble] : dynamicPlaced;
 
@@ -336,9 +366,10 @@ function afterUpdate() {
   });
 
   if (!marble) return;
-  trailPoints.push({ x: marble.position.x, y: marble.position.y });
-  if (trailPoints.length > TRAIL_MAX) trailPoints.shift();
-  if (marble.position.y > CH + 80) resetBall();
+  const v = marble.velocity, speed = Math.hypot(v.x, v.y);
+  if (speed > MAX_SPEED) {
+    Body.setVelocity(marble, { x: v.x * MAX_SPEED / speed, y: v.y * MAX_SPEED / speed });
+  }
 }
 
 // Trampoline: only bounce the marble, not other bodies
@@ -351,7 +382,7 @@ function handleCollisions(e) {
     const vy = marb.velocity.y;
     Body.setVelocity(marb, {
       x: marb.velocity.x * 0.9,
-      y: -(Math.abs(vy) * 2.3 + 2),
+      y: -(Math.abs(vy) * 2.3 + 2 / SUBSTEPS),   // constant is px/frame → scale to substep units
     });
   });
 }
@@ -359,6 +390,8 @@ function handleCollisions(e) {
 // ── Rendering ─────────────────────────────────────────────────────
 function afterRender() {
   const ctx = render.context;
+  fanSpin = (fanSpin + 0.16) % (Math.PI * 2);
+  frameTick++;
 
   // Background dot grid
   ctx.fillStyle = 'rgba(255,255,255,0.035)';
@@ -562,8 +595,10 @@ function setupEvents(canvas) {
     if (hit.length) removePlaced(hit[0]);
   });
 
-  // ── Touch: place / drag / double-tap-to-delete ──
+  // ── Touch: aim & release to place / drag / two-finger rotate / double-tap delete ──
   let touchDragging = false, lastTapTime = 0, lastTapBody = null;
+  let touchPlacing = false;   // tool selected: ghost follows the finger, placed on release
+  let twistAngle = null;      // reference angle of the two-finger rotate gesture
 
   function touchPoint(t) {
     const r = canvas.getBoundingClientRect();
@@ -573,14 +608,20 @@ function setupEvents(canvas) {
     };
   }
 
+  function twistOf(e) {
+    const [a, b] = [e.touches[0], e.touches[1]];
+    return Math.atan2(b.clientY - a.clientY, b.clientX - a.clientX);
+  }
+
   canvas.addEventListener('touchstart', e => {
     e.preventDefault();
-    const t = e.touches[0];
-    if (!t) return;
-    const p = touchPoint(t);
+    if (e.touches.length >= 2) { twistAngle = twistOf(e); return; }
+    const p = touchPoint(e.touches[0]);
     mousePos = p;
 
-    if (selectedTool) { placeElement(selectedTool, p); return; }
+    // With a tool selected, don't place right away: show the ghost while the
+    // finger is down (rotatable with a second finger), place on release.
+    if (selectedTool) { touchPlacing = true; return; }
 
     const hit = Query.point(placedBodies, p);
     if (!hit.length) return;
@@ -607,9 +648,22 @@ function setupEvents(canvas) {
 
   canvas.addEventListener('touchmove', e => {
     e.preventDefault();
-    const t = e.touches[0];
-    if (!t) return;
-    const p = touchPoint(t);
+
+    // Second finger down → twist rotates the ghost or the grabbed body
+    if (e.touches.length >= 2 && twistAngle !== null) {
+      const a = twistOf(e);
+      const d = a - twistAngle;
+      twistAngle = a;
+      if (selectedTool) {
+        placementAngle = (placementAngle + d) % (Math.PI * 2);
+      } else if (dragBody) {
+        Body.setAngle(dragBody, dragBody.angle + d);
+        Body.setAngularVelocity(dragBody, 0);
+      }
+      return;
+    }
+
+    const p = touchPoint(e.touches[0]);
     mousePos = p;
     if (touchDragging && dragBody) {
       Body.setPosition(dragBody, { x: p.x - dragOffX, y: p.y - dragOffY });
@@ -621,8 +675,20 @@ function setupEvents(canvas) {
 
   canvas.addEventListener('touchend', e => {
     e.preventDefault();
+    twistAngle = null;
+    if (e.touches.length > 0) return;   // a finger is still down — keep going
+    if (touchPlacing) {
+      touchPlacing = false;
+      if (selectedTool) placeElement(selectedTool, mousePos);
+      return;
+    }
     if (touchDragging) { releaseDrag(); touchDragging = false; }
   }, { passive: false });
+
+  canvas.addEventListener('touchcancel', () => {
+    twistAngle = null; touchPlacing = false;
+    if (touchDragging) { releaseDrag(); touchDragging = false; }
+  });
 }
 
 function releaseDrag() {
@@ -660,14 +726,13 @@ function pinBodyAt(nail, p) {
   const target = Query.point(dynamic, p)[0];
   if (!target) return;
 
-  // Anchor in target-local coordinates so it rotates along with the body
-  const dx = p.x - target.position.x;
-  const dy = p.y - target.position.y;
-  const cos = Math.cos(-target.angle), sin = Math.sin(-target.angle);
+  // Matter stores pointB as the offset in the body's CURRENT orientation and
+  // keeps rotating it as the body turns — so pass the plain world offset.
+  // (Un-rotating by the body angle here broke pinning of rotated elements.)
   const constraint = Constraint.create({
     pointA: { x: p.x, y: p.y },
     bodyB: target,
-    pointB: { x: dx * cos - dy * sin, y: dx * sin + dy * cos },
+    pointB: { x: p.x - target.position.x, y: p.y - target.position.y },
     length: 0, stiffness: 0.9, damping: 0.05,
     render: { visible: false },
   });
