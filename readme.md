@@ -9,8 +9,9 @@ Lightweight collection of mini games with a playful single-page homepage. Built 
 - `index.html` – central landing page with links to the mini apps
 - `css/` – shared styles and global project styling
 - `js/` – project-wide scripts: homepage main script (including the feedback widget)
-  and `version.js`, which stamps every footer with the site version — the timestamp
-  of the last deployment (`/api/version`), no manual bumping needed
+  and `version.js`, which stamps every footer with the site version — the commit
+  timestamp of the last push, written to `js/build.js` by the webhook container
+  on every pull, no manual bumping needed
 - `apps/` – individual mini apps with their own HTML, JS, and CSS
 - `server/` – site backend (zero-dependency Node.js, see `server/readme.md`):
   Zen Garden, highscores (`/api/scores/<game>`), anonymous feedback

@@ -1,7 +1,8 @@
-// Site version in every footer: the timestamp of the last site update,
-// rendered as DDMMYYYYHHMM in the visitor's local time. Comes from
-// /api/version (when the checkout last got a git pull); until that
-// answers, the page's own Last-Modified header is shown as a fallback.
+// Site version in every footer: the commit timestamp of the last push/merge,
+// rendered as DDMMYYYYHHMM in the visitor's local time. The webhook container
+// on the NAS writes it to js/build.js (just the epoch in ms) after every git
+// pull; until that file is fetched — or where it doesn't exist, e.g. in local
+// dev — the page's own Last-Modified header serves as fallback.
 (function () {
   function render(d) {
     if (isNaN(d)) return;
@@ -15,9 +16,11 @@
   render(new Date(document.lastModified));
 
   var basePath = location.pathname.indexOf('/dev/') === 0 ? '/dev' : '';
-  var apiBase = location.protocol.indexOf('http') === 0 ? location.origin + basePath : 'http://localhost:8787';
-  fetch(apiBase + '/api/version')
-    .then(function (r) { return r.json(); })
-    .then(function (d) { if (d && d.ts) render(new Date(d.ts)); })
+  fetch(basePath + '/js/build.js')
+    .then(function (r) { return r.ok ? r.text() : null; })
+    .then(function (t) {
+      var ts = parseInt(t, 10);
+      if (ts) render(new Date(ts));
+    })
     .catch(function () { /* fallback already rendered */ });
 })();

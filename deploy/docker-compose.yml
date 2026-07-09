@@ -44,6 +44,8 @@ services:
     volumes:
       - ./site:/site
       - ./site-dev:/site-dev
+    # After every pull the commit timestamp of HEAD is written to js/build.js
+    # (epoch in ms, untracked file) — the footers show it as the site version.
     entrypoint: >
       sh -c "
         git config --global --add safe.directory /site;
@@ -55,9 +57,11 @@ services:
           git clone -b dev https://github.com/DrJonias/AZB /site-dev;
         fi;
         while true; do
+          for d in /site /site-dev; do
+            git -C $$d pull || echo pull $$d failed;
+            echo $$(git -C $$d log -1 --format=%ct)000 > $$d/js/build.js;
+          done;
           sleep 60;
-          git -C /site pull || echo 'pull site failed';
-          git -C /site-dev pull || echo 'pull site-dev failed';
         done
       "
 

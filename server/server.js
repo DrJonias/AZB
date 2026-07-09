@@ -405,24 +405,6 @@ function applyCheat(b) {
   }
 }
 
-// When the checkout was last updated: mtime of the current branch ref,
-// which git rewrites whenever a pull actually moves the branch. Falls back
-// to packed-refs (git may pack refs) and finally to the server start time.
-const SERVER_START = Date.now();
-function checkoutUpdatedAt() {
-  const gitDir = path.join(APP_DIR, '.git');
-  try {
-    const head = fs.readFileSync(path.join(gitDir, 'HEAD'), 'utf8').trim();
-    const candidates = [];
-    if (head.startsWith('ref: ')) candidates.push(path.join(gitDir, head.slice(5)));
-    candidates.push(path.join(gitDir, 'packed-refs'));
-    for (const f of candidates) {
-      if (fs.existsSync(f)) return Math.round(fs.statSync(f).mtimeMs);
-    }
-  } catch { /* not a git checkout */ }
-  return SERVER_START;
-}
-
 // ── HTTP server ───────────────────────────────────────────────────
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 
@@ -460,12 +442,6 @@ const server = http.createServer((req, res) => {
 
   if (url.pathname === '/api/state' && req.method === 'GET') {
     return send(res, 200, stateFor(cleanName(url.searchParams.get('player'))));
-  }
-
-  // Site version = when this checkout last received an update (epoch ms).
-  // The footers fetch this and render it as DDMMYYYYHHMM in local time.
-  if (url.pathname === '/api/version' && req.method === 'GET') {
-    return send(res, 200, { ts: checkoutUpdatedAt() });
   }
 
   // Highscores: GET /api/scores/<game> · POST /api/scores/<game> {name, score}
