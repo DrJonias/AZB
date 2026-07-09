@@ -28,6 +28,7 @@ entire site at <http://localhost:8787> — nothing else is required.
 - `apps/stempeluhr` – Clock-In/Clock-Out with a 42h workweek (8:24 h/day), end-of-day time & overtime
 - `apps/zen-garden` – multiplayer clicker (rules: `apps/zen-garden/readme.md`)
 - `apps/doodle-jump` – jump'n'run with a global scoreboard
+- `apps/auszugs-budget` – fixed-costs planner for your first flat with an income check (localStorage)
 
 ## Branches & Deployment
 

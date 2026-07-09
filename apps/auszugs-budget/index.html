@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Auszugs-Budget — Playground</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💸</text></svg>">
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+
+  <div class="wrapper">
+    <a class="back" href="../../">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Zurück
+    </a>
+
+    <header class="page-header">
+      <span class="page-icon">💸</span>
+      <h1>Auszugs-Budget</h1>
+      <p class="subtitle">Plane deine Fixkosten für die erste eigene Wohnung — und check, ob dein Lohn reicht. Alles wird automatisch gespeichert.</p>
+    </header>
+
+    <div class="cols">
+
+      <div class="main">
+        <div class="grid-head">
+          <span>Was?</span><span>Monatlich (CHF)</span><span>Jährlich (CHF)</span><span></span>
+        </div>
+        <div id="rows"></div>
+
+        <div class="toolbar">
+          <button class="btn" id="addRow">+ Leere Zeile</button>
+          <button class="btn" id="exportPdf">Als PDF exportieren</button>
+          <button class="btn quiet" id="reset">Alles zurücksetzen</button>
+        </div>
+
+        <div class="totals">
+          <div class="tot">
+            <div class="label">Total monatlich</div>
+            <div class="val" id="totM">–</div>
+          </div>
+          <div class="tot">
+            <div class="label">Total jährlich</div>
+            <div class="val" id="totJ">–</div>
+          </div>
+        </div>
+
+        <div class="panel income">
+          <h2>Einnahmen-Check</h2>
+
+          <div class="seg" role="tablist" aria-label="Einkommens-Modus">
+            <button type="button" data-mode="monat" role="tab">Monatslohn</button>
+            <button type="button" data-mode="stunde" role="tab">Stundenlohn</button>
+            <button type="button" data-mode="pensum" role="tab">Pensum (%)</button>
+          </div>
+
+          <div class="mode-panel" id="panel-monat">
+            <div class="line">
+              <label for="inc">Netto-Einkommen pro Monat</label>
+              <input type="number" id="inc" step="10" min="0" inputmode="decimal">
+            </div>
+          </div>
+
+          <div class="mode-panel" id="panel-stunde">
+            <div class="line">
+              <label for="hourly">Netto-Stundenlohn (CHF/h)</label>
+              <input type="number" id="hourly" class="small" step="0.05" min="0" inputmode="decimal">
+              <label for="hpw">Stunden pro Woche</label>
+              <input type="number" id="hpw" class="small" step="0.5" min="0" inputmode="decimal">
+            </div>
+            <div class="derived" id="derivedStunde"></div>
+          </div>
+
+          <div class="mode-panel" id="panel-pensum">
+            <div class="line">
+              <label for="ref100">Netto-Lohn bei 100% (CHF/Monat)</label>
+              <input type="number" id="ref100" step="10" min="0" inputmode="decimal">
+            </div>
+            <div class="line">
+              <label>Pensum</label>
+              <div class="pensum-seg" id="pensumSeg" role="group" aria-label="Pensum wählen">
+                <button type="button" data-pct="20">20%</button>
+                <button type="button" data-pct="40">40%</button>
+                <button type="button" data-pct="50">50%</button>
+                <button type="button" data-pct="60">60%</button>
+                <button type="button" data-pct="80">80%</button>
+                <button type="button" data-pct="100">100%</button>
+              </div>
+            </div>
+            <div class="derived" id="derivedPensum"></div>
+          </div>
+
+          <div class="balance" id="bal"></div>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <p class="note">
+          Stundenlohn-Umrechnung: Stundenlohn × Wochenstunden × 4.33 Wochen pro Monat.
+          Nicht enthalten: einmalige Kosten beim Einzug (Kaution meist 2–3 Monatsmieten, Möbel, Umzug).
+          Prämienverbilligung der Krankenkasse nicht vergessen.
+        </p>
+      </div>
+
+      <aside class="panel templates" id="tplPanel">
+        <h2>Vorlagen</h2>
+        <p class="hint">In die Liste ziehen oder antippen, um sie hinzuzufügen. Mit × entfernst du eine Vorlage.</p>
+        <div class="tpl-list" id="tplList"></div>
+        <div class="tpl-new">
+          <div class="fields">
+            <input type="text" class="tn-name" id="tplName" placeholder="Neue Vorlage">
+            <input type="number" class="tn-amt" id="tplAmt" step="0.05" min="0" inputmode="decimal" placeholder="CHF/Mt.">
+          </div>
+          <button class="btn quiet" id="tplAdd">+ Vorlage speichern</button>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <footer>made with ♥ — <a href="../../">Playground</a></footer>
+
+  <script src="script.js?v=1"></script>
+</body>
+</html>
