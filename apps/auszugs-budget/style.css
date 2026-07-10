@@ -17,6 +17,41 @@
 
 .cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
 
+/* ── Listen-Tabs ───────────────────────────────────────────────── */
+.tabs {
+  display: flex; align-items: flex-end; gap: 4px; flex-wrap: wrap;
+  margin-top: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: inherit; font-size: 13.5px; cursor: pointer;
+  padding: 9px 14px; margin-bottom: -1px;
+  border: 1px solid rgba(255, 255, 255, 0.12); border-bottom: 1px solid transparent;
+  border-radius: 10px 10px 0 0;
+  background: rgba(255, 255, 255, 0.03); color: var(--muted);
+  max-width: 200px;
+}
+.tab:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.tab.active {
+  background: rgba(255, 255, 255, 0.08); color: #fff; font-weight: 600;
+  border-color: rgba(255, 211, 107, 0.5); border-bottom-color: transparent;
+}
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tab .tlabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tab .tact {
+  color: rgba(154, 167, 199, 0.6); font-size: 13px; line-height: 1;
+  padding: 2px 3px; border-radius: 4px; font-weight: 400;
+}
+.tab .tact:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+.tab .tclose { font-size: 16px; }
+.tab .tclose:hover { color: #ff6b6b; }
+.tab-add {
+  font-size: 17px; padding: 7px 13px; line-height: 1.2;
+  border-style: dashed;
+}
+.tab-add:hover { color: var(--accent); border-color: rgba(255, 211, 107, 0.5); }
+
 /* ── Budget-Zeilen ─────────────────────────────────────────────── */
 .grid-head, .row {
   display: grid;
@@ -86,14 +121,35 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 /* ── Totale ────────────────────────────────────────────────────── */
 .totals {
   margin-top: 32px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
   border-top: 2px solid rgba(255, 255, 255, 0.25);
 }
-.tot { padding: 18px 0 6px; }
-.tot:last-child { text-align: right; }
-.tot .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-.tot .val { font-size: clamp(24px, 5vw, 34px); font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; color: var(--accent); }
+.trow {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 1fr) 40px;
+  gap: 10px;
+  align-items: baseline;
+  padding: 9px 0;
+}
+.trow span:nth-child(1) { padding-left: 10px; }
+.trow span:nth-child(2), .trow span:nth-child(3) { text-align: right; padding-right: 10px; }
+.trow .num { font-variant-numeric: tabular-nums; }
+.trow.thead {
+  padding: 14px 0 6px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.trow:not(.thead):not(.grand) { border-bottom: 1px solid rgba(255, 255, 255, 0.07); cursor: pointer; }
+.trow:not(.thead):not(.grand):hover { background: rgba(255, 255, 255, 0.04); border-radius: 8px; }
+.trow .lname { color: var(--muted); }
+.trow.current .lname { color: #fff; font-weight: 600; }
+.trow.grand {
+  margin-top: 4px;
+  border-top: 2px solid rgba(255, 255, 255, 0.25);
+  padding: 14px 0 6px;
+  font-weight: 700;
+}
+.trow.grand .lname { color: #fff; }
+.trow.grand .num { color: var(--accent); font-size: clamp(16px, 3vw, 22px); white-space: nowrap; }
 
 /* ── Panels (Einnahmen + Vorlagen) ─────────────────────────────── */
 .panel {
@@ -211,9 +267,16 @@ footer a { color: var(--accent); text-decoration: none; }
   .row { break-inside: avoid; border-bottom-color: #ddd; }
   .grid-head { color: #666; border-bottom-color: #111; }
   .row input[type="text"], .row input[type="number"] { color: #111; background: transparent !important; border: none !important; }
+  .tabs { border-bottom-color: #111; }
+  .tab { background: none; border-color: #999; color: #444; }
+  .tab.active { color: #111; font-weight: 700; border-color: #111; }
+  .tab .tact, .tab-add { display: none !important; }
   .totals { border-top-color: #111; }
-  .tot .label { color: #666; }
-  .tot .val { color: #111; }
+  .trow.thead { color: #666; }
+  .trow:not(.thead):not(.grand) { border-bottom-color: #ddd; }
+  .trow .lname, .trow .num { color: #111 !important; }
+  .trow.thead span { color: #666 !important; }
+  .trow.grand { border-top-color: #111; }
   .panel { border: 1px solid #111; border-radius: 0; background: none; }
   .income { margin-top: 24px; }
   .income label, .derived { color: #444; }

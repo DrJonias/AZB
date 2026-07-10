@@ -1,4 +1,4 @@
-// Auszugs-Budget — Fixkosten planen, Einnahmen checken. Speichert in localStorage.
+// Auszugs-Budget — Kosten in mehreren Listen planen, Einnahmen checken. Speichert in localStorage.
 (function () {
   var KEY = 'auszugs-budget';
   var WEEKS_PER_MONTH = 4.33;
@@ -25,6 +25,12 @@
     { n: 'Sparen / Reserve', m: 300 }
   ];
 
+  var DEFAULT_LISTS = [
+    { name: 'Fixkosten', rows: [] },
+    { name: 'Alltag', rows: [] },
+    { name: 'Sparen', rows: [] }
+  ];
+
   var DEFAULTS = {
     incomeMode: 'monat',
     income: null,
@@ -32,11 +38,14 @@
     hoursPerWeek: 8,
     ref100: null,
     pensum: 40,
-    rows: [],
+    lists: JSON.parse(JSON.stringify(DEFAULT_LISTS)),
+    activeList: 0,
     templates: JSON.parse(JSON.stringify(DEFAULT_TEMPLATES))
   };
 
   var rowsEl = document.getElementById('rows');
+  var tabsEl = document.getElementById('tabs');
+  var totalsEl = document.getElementById('totals');
   var tplListEl = document.getElementById('tplList');
   var statusEl = document.getElementById('status');
   var incEl = document.getElementById('inc');
@@ -50,6 +59,8 @@
   var incomeMode = 'monat';
   var pensum = 40;
   var templates = [];
+  var lists = [];
+  var activeIdx = 0;
 
   function r2(v) { return Math.round(v * 100) / 100; }
   function fmt(v) {
@@ -101,14 +112,160 @@
     });
   }
 
-  function recalc() {
-    var tm = 0;
-    rowsEl.querySelectorAll('.row .m').forEach(function (i) {
-      var v = parseFloat(i.value);
-      if (!isNaN(v)) tm += v;
+  /* ── Listen (Tabs) ───────────────────────────────────────────── */
+  function syncActiveRows() {
+    if (!lists[activeIdx]) return;
+    var rows = [];
+    rowsEl.querySelectorAll('.row').forEach(function (r) {
+      var n = r.querySelector('.name').value;
+      var m = parseFloat(r.querySelector('.m').value);
+      rows.push({ n: n, m: isNaN(m) ? null : m });
     });
-    document.getElementById('totM').textContent = fmt(tm);
-    document.getElementById('totJ').textContent = fmt(tm * 12);
+    lists[activeIdx].rows = rows;
+  }
+
+  function listTotal(list) {
+    var t = 0;
+    list.rows.forEach(function (r) {
+      if (typeof r.m === 'number' && !isNaN(r.m)) t += r.m;
+    });
+    return t;
+  }
+
+  function renderRows() {
+    rowsEl.innerHTML = '';
+    lists[activeIdx].rows.forEach(function (d) { makeRow(d.n, d.m); });
+    updateEmptyHint();
+  }
+
+  function switchTo(i) {
+    if (i === activeIdx || !lists[i]) return;
+    syncActiveRows();
+    activeIdx = i;
+    renderTabs(); renderRows(); recalc(); scheduleSave();
+  }
+
+  function addList() {
+    var name = prompt('Name der neuen Liste:', 'Neue Liste');
+    if (name === null) return;
+    name = name.trim() || 'Neue Liste';
+    syncActiveRows();
+    lists.push({ name: name, rows: [] });
+    activeIdx = lists.length - 1;
+    renderTabs(); renderRows(); recalc(); scheduleSave();
+  }
+
+  function renameList(i) {
+    var name = prompt('Liste umbenennen:', lists[i].name);
+    if (name === null) return;
+    name = name.trim();
+    if (!name) return;
+    lists[i].name = name;
+    renderTabs(); recalc(); scheduleSave();
+  }
+
+  function deleteList(i) {
+    if (lists.length <= 1) return;
+    syncActiveRows();
+    var l = lists[i];
+    if (l.rows.length && !confirm('Liste «' + l.name + '» mit ' + l.rows.length + ' Posten löschen?')) return;
+    lists.splice(i, 1);
+    if (activeIdx >= lists.length) activeIdx = lists.length - 1;
+    renderTabs(); renderRows(); recalc(); scheduleSave();
+  }
+
+  function renderTabs() {
+    tabsEl.innerHTML = '';
+    lists.forEach(function (l, i) {
+      var tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'tab' + (i === activeIdx ? ' active' : '');
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-selected', i === activeIdx ? 'true' : 'false');
+
+      var label = document.createElement('span');
+      label.className = 'tlabel';
+      label.textContent = l.name;
+      tab.appendChild(label);
+
+      if (i === activeIdx) {
+        var ren = document.createElement('span');
+        ren.className = 'tact';
+        ren.textContent = '✎';
+        ren.title = 'Liste umbenennen';
+        ren.addEventListener('click', function (e) { e.stopPropagation(); renameList(i); });
+        tab.appendChild(ren);
+
+        if (lists.length > 1) {
+          var cls = document.createElement('span');
+          cls.className = 'tact tclose';
+          cls.textContent = '×';
+          cls.title = 'Liste löschen';
+          cls.addEventListener('click', function (e) { e.stopPropagation(); deleteList(i); });
+          tab.appendChild(cls);
+        }
+      }
+
+      tab.addEventListener('click', function () { switchTo(i); });
+      tab.addEventListener('dblclick', function () { renameList(i); });
+      tabsEl.appendChild(tab);
+    });
+
+    var add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'tab tab-add';
+    add.textContent = '+';
+    add.title = 'Neue Liste hinzufügen';
+    add.setAttribute('aria-label', 'Neue Liste hinzufügen');
+    add.addEventListener('click', addList);
+    tabsEl.appendChild(add);
+  }
+
+  /* ── Totale + Bilanz ─────────────────────────────────────────── */
+  function recalc() {
+    syncActiveRows();
+
+    totalsEl.innerHTML = '';
+    var head = document.createElement('div');
+    head.className = 'trow thead';
+    head.innerHTML = '<span>Liste</span><span>Monatlich</span><span>Jährlich</span><span></span>';
+    totalsEl.appendChild(head);
+
+    var grand = 0;
+    lists.forEach(function (l, i) {
+      var t = listTotal(l);
+      grand += t;
+      var row = document.createElement('div');
+      row.className = 'trow' + (i === activeIdx ? ' current' : '');
+      var name = document.createElement('span');
+      name.className = 'lname';
+      name.textContent = l.name;
+      var m = document.createElement('span');
+      m.className = 'num';
+      m.textContent = fmt(t);
+      var j = document.createElement('span');
+      j.className = 'num';
+      j.textContent = fmt(t * 12);
+      row.appendChild(name); row.appendChild(m); row.appendChild(j);
+      row.appendChild(document.createElement('span'));
+      row.addEventListener('click', function () { switchTo(i); });
+      totalsEl.appendChild(row);
+    });
+
+    var g = document.createElement('div');
+    g.className = 'trow grand';
+    var gn = document.createElement('span');
+    gn.className = 'lname';
+    gn.textContent = 'Gesamt (alle Listen)';
+    var gm = document.createElement('span');
+    gm.className = 'num';
+    gm.textContent = fmt(grand);
+    var gj = document.createElement('span');
+    gj.className = 'num';
+    gj.textContent = fmt(grand * 12);
+    g.appendChild(gn); g.appendChild(gm); g.appendChild(gj);
+    g.appendChild(document.createElement('span'));
+    totalsEl.appendChild(g);
 
     var inc = effectiveIncome();
 
@@ -125,7 +282,7 @@
 
     var bal = document.getElementById('bal');
     if (inc === null) { bal.textContent = ''; bal.className = 'balance'; return; }
-    var diff = r2(inc - tm);
+    var diff = r2(inc - grand);
     if (diff >= 0) {
       bal.className = 'balance pos';
       bal.innerHTML = 'Es bleiben <span class="num">' + fmt(diff) + '</span> pro Monat übrig.';
@@ -137,15 +294,11 @@
 
   /* ── Speichern ───────────────────────────────────────────────── */
   function collect() {
-    var rows = [];
-    rowsEl.querySelectorAll('.row').forEach(function (r) {
-      var n = r.querySelector('.name').value;
-      var m = parseFloat(r.querySelector('.m').value);
-      rows.push({ n: n, m: isNaN(m) ? null : m });
-    });
+    syncActiveRows();
     function num(el) { var v = parseFloat(el.value); return isNaN(v) ? null : v; }
     return {
-      rows: rows,
+      lists: lists,
+      activeList: activeIdx,
       templates: templates,
       incomeMode: incomeMode,
       income: num(incEl),
@@ -206,7 +359,7 @@
       mIn.value = isNaN(v) ? '' : r2(v / 12);
       recalc(); scheduleSave();
     });
-    nameIn.addEventListener('input', scheduleSave);
+    nameIn.addEventListener('input', function () { recalc(); scheduleSave(); });
     del.addEventListener('click', function () {
       row.remove(); updateEmptyHint(); recalc(); scheduleSave();
     });
@@ -308,10 +461,33 @@
   });
 
   /* ── Render ──────────────────────────────────────────────────── */
+  function sanitizeLists(src) {
+    var out = [];
+    (Array.isArray(src) ? src : []).forEach(function (l) {
+      if (!l || typeof l !== 'object') return;
+      var rows = Array.isArray(l.rows)
+        ? l.rows.filter(function (r) { return r && typeof r === 'object'; })
+        : [];
+      out.push({
+        name: (typeof l.name === 'string' && l.name.trim()) ? l.name : 'Liste',
+        rows: rows
+      });
+    });
+    return out;
+  }
+
   function render(state) {
-    rowsEl.innerHTML = '';
-    (state.rows || []).forEach(function (d) { makeRow(d.n, d.m); });
-    updateEmptyHint();
+    lists = sanitizeLists(state.lists);
+    if (!lists.length) {
+      lists = JSON.parse(JSON.stringify(DEFAULT_LISTS));
+      // Migration: alte Einzel-Liste landet im ersten Tab
+      if (Array.isArray(state.rows) && state.rows.length) lists[0].rows = state.rows;
+    }
+    activeIdx = (typeof state.activeList === 'number' && state.activeList >= 0 && state.activeList < lists.length)
+      ? state.activeList : 0;
+
+    renderTabs();
+    renderRows();
 
     templates = Array.isArray(state.templates) && state.templates.length
       ? state.templates
@@ -354,7 +530,7 @@
   });
 
   document.getElementById('addRow').addEventListener('click', function () {
-    makeRow('', null); scheduleSave();
+    makeRow('', null); recalc(); scheduleSave();
   });
 
   document.getElementById('exportPdf').addEventListener('click', function () {
@@ -363,7 +539,7 @@
   });
 
   document.getElementById('reset').addEventListener('click', function () {
-    if (confirm('Liste leeren und Vorlagen auf den Standard zurücksetzen?')) {
+    if (confirm('Alle Listen leeren und Vorlagen auf den Standard zurücksetzen?')) {
       render(JSON.parse(JSON.stringify(DEFAULTS)));
       scheduleSave();
     }

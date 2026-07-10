@@ -6,7 +6,7 @@
   <title>Auszugs-Budget — Playground</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💸</text></svg>">
   <link rel="stylesheet" href="../../css/style.css">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 
@@ -19,12 +19,13 @@
     <header class="page-header">
       <span class="page-icon">💸</span>
       <h1>Auszugs-Budget</h1>
-      <p class="subtitle">Plane deine Fixkosten für die erste eigene Wohnung — und check, ob dein Lohn reicht. Alles wird automatisch gespeichert.</p>
+      <p class="subtitle">Plane deine Kosten in mehreren Listen — Fixkosten, Alltag, Sparen &amp; mehr — und check, ob dein Lohn reicht. Alles wird automatisch gespeichert.</p>
     </header>
 
     <div class="cols">
 
       <div class="main">
+        <div class="tabs" id="tabs" role="tablist" aria-label="Budget-Listen"></div>
         <div class="grid-head">
           <span>Was?</span><span>Monatlich (CHF)</span><span>Jährlich (CHF)</span><span></span>
         </div>
@@ -36,16 +37,7 @@
           <button class="btn quiet" id="reset">Alles zurücksetzen</button>
         </div>
 
-        <div class="totals">
-          <div class="tot">
-            <div class="label">Total monatlich</div>
-            <div class="val" id="totM">–</div>
-          </div>
-          <div class="tot">
-            <div class="label">Total jährlich</div>
-            <div class="val" id="totJ">–</div>
-          </div>
-        </div>
+        <div class="totals" id="totals"></div>
 
         <div class="panel income">
           <h2>Einnahmen-Check</h2>
@@ -123,6 +115,6 @@
   <footer data-version></footer>
   <script src="../../js/version.js?v=1"></script>
 
-  <script src="script.js?v=1"></script>
+  <script src="script.js?v=2"></script>
 </body>
 </html>
